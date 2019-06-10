@@ -34,21 +34,33 @@ public class PcmsBot extends TelegramLongPollingBot {
                 if (parts.length == 3) {
                     user.login = parts[1];
                     user.pass = parts[2];
-                    //todo: check if he can login;
-                    synchronized (chats) {
-                        chats.put(chatId, user);
+
+                    if (RunListWatcher.canLogin(user.login, user.pass)) {
+                        synchronized (chats) {
+                            chats.put(chatId, user);
+                        }
+                        message.setText("Starting to watch undefined and failed Jobs. Type /logout to stop");
+                        System.out.println("LOGIN: " + user.login);
+                    } else {
+                        message.setText("Sorry, couldn't login. Provide your login and password by typing /login <user> <pass>");
+                        System.out.println("LOGIN FAILED: " + user.login);
                     }
-                    message.setText("Starting to watch undefined and failed failedJobs");
-                    System.out.println("LOGIN: " + user.login);
+
                 } else {
                     message.setText("Sorry. Provide your login and password by typing /login <user> <pass>");
                     System.out.println("LOGIN FAILED: " + message_text);
                 }
 
+            } else if (message_text.startsWith("/logout")) {
+                synchronized (chats) {
+                    chats.remove(chatId);
+                }
+                message.setText("Stopped watching your jobs");
+                System.out.println("LOGOUT: " + user.login);
             } else {
                 //todo: other commands
                 if (chats.containsKey(chatId)) {
-                    message.setText("Already watching your failedJobs");
+                    message.setText("Already watching your undefined and failed Jobs");
                 } else {
                     message.setText("Provide your login and password by typing /login <user> <pass>");
                 }

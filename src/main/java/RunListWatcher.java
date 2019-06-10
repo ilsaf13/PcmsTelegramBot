@@ -11,7 +11,24 @@ import java.util.Set;
 public class RunListWatcher implements Runnable {
     PcmsBot bot;
     final long timeout;
-    String url;
+    static String url;
+
+    public static boolean canLogin(String login, String pass) {
+        try {
+            JsonReader reader = Json.createReader(new InputStreamReader(
+                    new URL(String.format(url, login, pass, "")).openStream(),
+                    "UTF-8"));
+            JsonObject object = reader.readObject();
+            JsonObject ok = object.getJsonObject("ok");
+            if (ok != null) {
+                return true;
+            }
+            return false;
+        } catch (Exception ignored) {
+        }
+        return false;
+
+    }
 
     public RunListWatcher(PcmsBot bot, String host, int timeoutSeconds) {
         this.bot = bot;
@@ -30,7 +47,10 @@ public class RunListWatcher implements Runnable {
             int total = ok.getInt("total");
             Set<String> userJobs = new HashSet<String>();
             if (total == 0) {
-                user.failedJobs = userJobs;
+                if (user.failedJobs.size() > 0) {
+                    user.failedJobs = userJobs;
+                    return "All previous failed runs are judged";
+                }
                 return null;
             }
             total = 0;
@@ -52,7 +72,7 @@ public class RunListWatcher implements Runnable {
             }
             return null;
         } else {
-            return "Couldn't get API response for failed failedJobs :(";
+            return "Couldn't get API response for failed jobs :(";
         }
     }
 
@@ -66,7 +86,10 @@ public class RunListWatcher implements Runnable {
             int total = ok.getInt("total");
             Set<String> userJobs = new HashSet<String>();
             if (total == 0) {
-                user.undefinedJobs = userJobs;
+                if (user.undefinedJobs.size() > 0) {
+                    user.undefinedJobs = userJobs;
+                    return "All previous undefined runs are judged";
+                }
                 return null;
             }
             JsonArray jobs = ok.getJsonArray("item");
@@ -89,11 +112,11 @@ public class RunListWatcher implements Runnable {
             }
             user.undefinedJobs = userJobs;
             if (cnt > 0)
-                return "Undefined runs count: " + total + "\n\n" + sb.toString();
+                return "Undefined for too long time runs count: " + total + "\n\n" + sb.toString();
 
             return null;
         } else {
-            return "Couldn't get API response for undefined failedJobs :(";
+            return "Couldn't get API response for undefined jobs :(";
         }
     }
 

@@ -1,0 +1,6 @@
+{
+  "botUsername": "botUserName",
+  "botToken": "botToken",
+  "url": "http://PCMS.server.URL",
+  "timeout": 60
+}

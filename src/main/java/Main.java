@@ -14,13 +14,13 @@ public class Main {
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
         JsonReader reader = Json.createReader(new InputStreamReader(new FileInputStream("bot.json"), "UTF-8"));
         JsonObject object = reader.readObject();
-        // TODO Initialize Api Context
+        //Initialize Api Context
         ApiContextInitializer.init();
 
-        // TODO Instantiate Telegram Bots API
+        //Instantiate Telegram Bots API
         TelegramBotsApi botsApi = new TelegramBotsApi();
 
-        // TODO Register our bot
+        //Register our bot
         PcmsBot bot = new PcmsBot(object.getString("botUsername"), object.getString("botToken"));
         try {
             botsApi.registerBot(bot);
