@@ -1,3 +1,6 @@
+package pcms.telegram.bot;
+
+import pcms.telegram.bot.domain.User;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import javax.json.*;
@@ -20,14 +23,10 @@ public class RunListWatcher implements Runnable {
                     "UTF-8"));
             JsonObject object = reader.readObject();
             JsonObject ok = object.getJsonObject("ok");
-            if (ok != null) {
-                return true;
-            }
-            return false;
+            return ok != null;
         } catch (Exception ignored) {
         }
         return false;
-
     }
 
     public RunListWatcher(PcmsBot bot, String host, int timeoutSeconds) {
@@ -39,7 +38,7 @@ public class RunListWatcher implements Runnable {
 
     String getFailedRuns(User user) throws IOException {
         JsonReader reader = Json.createReader(new InputStreamReader(
-                new URL(String.format(url, user.login, user.pass, "FL")).openStream(),
+                new URL(String.format(url, user.getLogin(), user.getPass(), "FL")).openStream(),
                 "UTF-8"));
         JsonObject object = reader.readObject();
         JsonObject ok = object.getJsonObject("ok");
@@ -78,7 +77,8 @@ public class RunListWatcher implements Runnable {
 
     String getUndefinedRuns(User user) throws IOException {
 //        System.out.println("Jobs size: " + user.undefinedJobs.size());
-        JsonReader reader = Json.createReader(new InputStreamReader(new URL(String.format(url, user.login, user.pass, "UD") + "&detail=job-times")
+        JsonReader reader = Json.createReader(new InputStreamReader(
+                new URL(String.format(url, user.getLogin(), user.getPass(), "UD") + "&detail=job-times")
                 .openStream(), "UTF-8"));
         JsonObject object = reader.readObject();
         JsonObject ok = object.getJsonObject("ok");
