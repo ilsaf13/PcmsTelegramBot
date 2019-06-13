@@ -9,14 +9,17 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import pcms.telegram.bot.domain.User;
 import pcms.telegram.bot.repos.UserRepo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 @Service
 public class PcmsBot extends TelegramLongPollingBot {
     @Autowired
     UserRepo userRepo;
 
-    final HashMap<Long, User> chats = new HashMap<Long, User>();
+    //chatId -> List<User>
+    final HashMap<Long, List<User>> chats = new HashMap<Long, List<User>>();
     private String botUsername;
     private String botToken;
 
@@ -24,25 +27,19 @@ public class PcmsBot extends TelegramLongPollingBot {
         Main.bot = this;
     }
 
-    public PcmsBot(String name, String token) {
-        botUsername = name;
-        botToken = token;
-        Iterable<User> users = userRepo.findAll();
-        for (User u : users) {
-            synchronized (chats) {
-                chats.put(u.getChatId(), u);
-            }
-        }
-    }
-
     public void init(String name, String token) {
         botUsername = name;
         botToken = token;
         Iterable<User> users = userRepo.findAll();
         for (User u : users) {
-            synchronized (chats) {
-                chats.put(u.getChatId(), u);
+            List<User> userList = chats.get(u.getId());
+            if (userList == null) {
+                userList = new ArrayList<User>();
+                synchronized (chats) {
+                    chats.put(u.getChatId(), userList);
+                }
             }
+            userList.add(u);
         }
     }
 
@@ -53,11 +50,8 @@ public class PcmsBot extends TelegramLongPollingBot {
 
             SendMessage message = new SendMessage().setChatId(chatId);
 
-            User user = chats.get(chatId);
-            if (user == null) {
-                user = new User();
-                user.setChatId(chatId);
-            }
+            User user = new User();
+            user.setChatId(chatId);
 
             if (message_text.startsWith("/login")) {
                 String[] parts = message_text.split(" ");
@@ -66,12 +60,25 @@ public class PcmsBot extends TelegramLongPollingBot {
                     user.setPass(parts[2]);
 
                     if (RunListWatcher.canLogin(user.getLogin(), user.getPass())) {
-                        synchronized (chats) {
-                            chats.put(chatId, user);
+                        List<User> userList = chats.get(chatId);
+                        if (userList == null) {
+                            userList = new ArrayList<User>();
+                            synchronized (chats) {
+                                chats.put(chatId, userList);
+                            }
                         }
-                        userRepo.save(user);
-                        message.setText("Starting to watch undefined and failed Jobs. Type /logout to stop");
-                        System.out.println("LOGIN: " + user.getLogin());
+                        User other = User.get(userList, user);
+                        if (other != null) {
+                            user = other;
+                            message.setText("Already watching your undefined and failed Jobs");
+                        } else {
+                            userRepo.save(user);
+                            synchronized (userList) {
+                                userList.add(user);
+                            }
+                            message.setText("Starting to watch undefined and failed Jobs. Type /logout to stop");
+                            System.out.println("LOGIN: " + user.getLogin());
+                        }
                     } else {
                         message.setText("Sorry, couldn't login. Provide your login and password by typing /login <user> <pass>");
                         System.out.println("LOGIN FAILED: " + user.getLogin());
@@ -86,13 +93,14 @@ public class PcmsBot extends TelegramLongPollingBot {
                 synchronized (chats) {
                     chats.remove(chatId);
                 }
-                userRepo.delete(user);
+                userRepo.deleteByChatId(user.getChatId());
                 message.setText("Stopped watching your jobs");
                 System.out.println("LOGOUT: " + user.getLogin());
             } else {
                 //todo: other commands
                 if (chats.containsKey(chatId)) {
-                    message.setText("Already watching your undefined and failed Jobs");
+                    message.setText("Already watching your undefined and failed Jobs. Logins: " +
+                            User.getLoginList(chats.get(chatId)));
                 } else {
                     message.setText("Provide your login and password by typing /login <user> <pass>");
                 }

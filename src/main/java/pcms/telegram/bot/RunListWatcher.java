@@ -1,13 +1,14 @@
 package pcms.telegram.bot;
 
-import pcms.telegram.bot.domain.User;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import pcms.telegram.bot.domain.User;
 
 import javax.json.*;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,14 +49,15 @@ public class RunListWatcher implements Runnable {
             if (total == 0) {
                 if (user.failedJobs.size() > 0) {
                     user.failedJobs = userJobs;
-                    return "All previous failed runs are judged";
+                    return String.format("Login: %s. All previous failed runs are judged", user.getLogin());
                 }
                 return null;
             }
-            total = 0;
             JsonArray jobs = ok.getJsonArray("item");
             StringBuilder sb = new StringBuilder();
+            sb.append("Login: ").append(user.getLogin()).append(". ");
             sb.append("Failed runs count: ").append(total).append("\n");
+            total = 0;
             for (JsonValue o : jobs) {
                 userJobs.add(o.asJsonObject().getString("job-id"));
                 if (!user.failedJobs.contains(o.asJsonObject().getString("job-id"))) {
@@ -71,7 +73,7 @@ public class RunListWatcher implements Runnable {
             }
             return null;
         } else {
-            return "Couldn't get API response for failed jobs :(";
+            return String.format("Login: %s. Couldn't get API response for failed jobs :(", user.getLogin());
         }
     }
 
@@ -88,7 +90,7 @@ public class RunListWatcher implements Runnable {
             if (total == 0) {
                 if (user.undefinedJobs.size() > 0) {
                     user.undefinedJobs = userJobs;
-                    return "All previous undefined runs are judged";
+                    return String.format("Login: %s. All previous undefined runs are judged", user.getLogin());
                 }
                 return null;
             }
@@ -112,32 +114,34 @@ public class RunListWatcher implements Runnable {
             }
             user.undefinedJobs = userJobs;
             if (cnt > 0)
-                return "Undefined for too long time runs count: " + total + "\n\n" + sb.toString();
+                return String.format("Login: %s. Undefined for too long time runs count: %d\n\n%s",
+                        user.getLogin(), total, sb.toString());
 
             return null;
         } else {
-            return "Couldn't get API response for undefined jobs :(";
+            return String.format("Login: %s. Couldn't get API response for undefined jobs :(", user.getLogin());
         }
     }
 
     public void run() {
         while (true) {
-            for (Map.Entry<Long, User> entry : bot.chats.entrySet()) {
-                try {
-                    String failed = getFailedRuns(entry.getValue());
-                    if (failed != null) {
-                        SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(failed);
-                        bot.execute(message);
+            for (Map.Entry<Long, List<User>> entry : bot.chats.entrySet()) {
+                for (User user : entry.getValue()) {
+                    try {
+                        String failed = getFailedRuns(user);
+                        if (failed != null) {
+                            SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(failed);
+                            bot.execute(message);
+                        }
+                        String undef = getUndefinedRuns(user);
+                        if (undef != null) {
+                            SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(undef);
+                            bot.execute(message);
+                        }
+                    } catch (Exception ignored) {
+                        ignored.printStackTrace();
                     }
-                    String undef = getUndefinedRuns(entry.getValue());
-                    if (undef != null) {
-                        SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(undef);
-                        bot.execute(message);
-                    }
-                } catch (Exception ignored) {
-                    ignored.printStackTrace();
                 }
-
             }
 
             try {
