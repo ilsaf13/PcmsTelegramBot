@@ -13,4 +13,7 @@ public interface UserRepo extends JpaRepository<User, Long> {
 
     @Transactional
     void deleteByChatId(long chatId);
+
+    @Transactional
+    void deleteByChatIdAndLoginAndPass(long chatId, String login, String pass);
 }

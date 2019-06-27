@@ -32,7 +32,7 @@ public class PcmsBot extends TelegramLongPollingBot {
         botToken = token;
         Iterable<User> users = userRepo.findAll();
         for (User u : users) {
-            List<User> userList = chats.get(u.getId());
+            List<User> userList = chats.get(u.getChatId());
             if (userList == null) {
                 userList = new ArrayList<User>();
                 synchronized (chats) {
@@ -73,10 +73,10 @@ public class PcmsBot extends TelegramLongPollingBot {
                             message.setText("Already watching your undefined and failed Jobs");
                         } else {
                             userRepo.save(user);
-                            synchronized (userList) {
+                            synchronized (chats) {
                                 userList.add(user);
                             }
-                            message.setText("Starting to watch undefined and failed Jobs. Type /logout to stop");
+                            message.setText("Starting to watch undefined and failed Jobs. Type /logout <user> <pass> to stop");
                             System.out.println("LOGIN: " + user.getLogin());
                         }
                     } else {
@@ -90,12 +90,35 @@ public class PcmsBot extends TelegramLongPollingBot {
                 }
 
             } else if (message_text.startsWith("/logout")) {
-                synchronized (chats) {
-                    chats.remove(chatId);
+                String[] parts = message_text.split(" ");
+                if (parts.length == 1) {
+                    userRepo.deleteByChatId(user.getChatId());
+                    message.setText("Stopped watching your jobs");
+                    System.out.println("LOGOUT: " + User.getLoginList(chats.get(chatId)));
+                    synchronized (chats) {
+                        chats.remove(chatId);
+                    }
+                } else if (parts.length == 3){
+                    user.setLogin(parts[1]);
+                    user.setPass(parts[2]);
+                    List<User> userList = chats.get(chatId);
+                    boolean found;
+                    synchronized (chats) {
+                        found = userList.remove(user);
+                        if (userList.isEmpty()) {
+                            chats.remove(chatId);
+                        }
+                    }
+                    if (found) {
+                        userRepo.deleteByChatIdAndLoginAndPass(user.getChatId(), user.getLogin(), user.getPass());
+                        message.setText("Stopped watching your jobs for login " + user.getLogin());
+                        System.out.println("LOGOUT: " + user.getLogin());
+                    } else {
+                        message.setText("Not found login and password pair: " + user.getLogin() + " " + user.getPass());
+                    }
+                } else {
+                    message.setText("Type /logout to stop watching all users or /logout <user> <pass> for one user");
                 }
-                userRepo.deleteByChatId(user.getChatId());
-                message.setText("Stopped watching your jobs");
-                System.out.println("LOGOUT: " + user.getLogin());
             } else {
                 //todo: other commands
                 if (chats.containsKey(chatId)) {
