@@ -30,7 +30,7 @@ public class RunListWatcher implements Runnable {
         return false;
     }
 
-    public RunListWatcher(PcmsBot bot, String host, int timeoutSeconds) {
+    public RunListWatcher(PcmsBot bot, String host, long timeoutSeconds) {
         this.bot = bot;
         timeout = timeoutSeconds * 1000L;
         url = String.format("%s/api/admin/run/list?login=%%s&password=%%s&format=json&outcome=%%s&flags=A", host);
@@ -119,7 +119,7 @@ public class RunListWatcher implements Runnable {
 
             return null;
         } else {
-            return String.format("Login: %s. Couldn't get API response for undefined jobs :(", user.getLogin());
+            return String.format("Login: %s. Couldn't get API response for undefined jobs", user.getLogin());
         }
     }
 
@@ -127,19 +127,21 @@ public class RunListWatcher implements Runnable {
         while (true) {
             for (Map.Entry<Long, List<User>> entry : bot.chats.entrySet()) {
                 for (User user : entry.getValue()) {
-                    try {
-                        String failed = getFailedRuns(user);
-                        if (failed != null) {
-                            SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(failed);
-                            bot.execute(message);
+                    if (user.isWatchRuns()) {
+                        try {
+                            String failed = getFailedRuns(user);
+                            if (failed != null) {
+                                SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(failed);
+                                bot.execute(message);
+                            }
+                            String undef = getUndefinedRuns(user);
+                            if (undef != null) {
+                                SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(undef);
+                                bot.execute(message);
+                            }
+                        } catch (Exception ignored) {
+                            ignored.printStackTrace();
                         }
-                        String undef = getUndefinedRuns(user);
-                        if (undef != null) {
-                            SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(undef);
-                            bot.execute(message);
-                        }
-                    } catch (Exception ignored) {
-                        ignored.printStackTrace();
                     }
                 }
             }

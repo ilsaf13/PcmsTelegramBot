@@ -6,27 +6,21 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name="user_chats")
+@Table(name = "user_chats")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     long id;
     long chatId;
     String login, pass, url;
+    boolean watchRuns, watchQuestions;
 
     @Transient
     public Set<String> failedJobs = new HashSet<String>();
     @Transient
     public Set<String> undefinedJobs = new HashSet<String>();
-
-    public static User get(List<User> userList, User user) {
-        for (User u : userList) {
-            if (user.equals(u)) {
-                return u;
-            }
-        }
-        return null;
-    }
+    @Transient
+    public Set<Long> questions = new HashSet<Long>();
 
     public boolean equals(Object o) {
         if (!(o instanceof User)) return false;
@@ -48,7 +42,8 @@ public class User {
     }
 
     public String toString() {
-        return chatId + ", " + login;
+        return String.format("User %s, %swatching failed and undefined runs, %swatching questions.",
+                login, watchRuns ? "" : "not ", watchQuestions ? "" : "not ");
     }
 
     public long getChatId() {
@@ -81,5 +76,21 @@ public class User {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public boolean isWatchRuns() {
+        return watchRuns;
+    }
+
+    public void setWatchRuns(boolean watchRuns) {
+        this.watchRuns = watchRuns;
+    }
+
+    public boolean isWatchQuestions() {
+        return watchQuestions;
+    }
+
+    public void setWatchQuestions(boolean watchQuestions) {
+        this.watchQuestions = watchQuestions;
     }
 }

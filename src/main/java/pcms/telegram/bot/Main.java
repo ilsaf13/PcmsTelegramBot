@@ -42,8 +42,10 @@ public class Main {
             e.printStackTrace();
         }
 
-        RunListWatcher watcher = new RunListWatcher(bot, object.getString("url"), object.getInt("timeout"));
+        RunListWatcher runListWatcher = new RunListWatcher(bot, object.getString("url"), object.getInt("timeout"));
+        QuestionsWatcher questionsWatcher = new QuestionsWatcher(bot, object.getString("url"), object.getInt("timeout"));
 
-        new Thread(watcher).start();
+        new Thread(runListWatcher).start();
+        new Thread(questionsWatcher).start();
     }
 }

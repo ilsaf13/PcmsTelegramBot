@@ -5,11 +5,9 @@ import org.springframework.stereotype.Repository;
 import pcms.telegram.bot.domain.User;
 
 import javax.transaction.Transactional;
-import java.util.List;
 
 @Repository
 public interface UserRepo extends JpaRepository<User, Long> {
-    List<User> findByChatId(long chatId);
 
     @Transactional
     void deleteByChatId(long chatId);
