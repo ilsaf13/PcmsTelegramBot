@@ -91,8 +91,9 @@ public class QuestionsWatcher implements Runnable{
                                 SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(questions);
                                 bot.execute(message);
                             }
-                        } catch (Exception ignored) {
-                            ignored.printStackTrace();
+                        } catch (Exception e) {
+                            System.out.printf("Error sending message! Chat-id %d login %s\n", user.getChatId(), user.getLogin());
+                            e.printStackTrace();
                         }
                     }
                 }
