@@ -1,40 +1,37 @@
 package pcms.telegram.bot;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import pcms.telegram.bot.domain.User;
-import pcms.telegram.bot.repos.UserRepo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-@Service
 public class PcmsBot extends TelegramLongPollingBot {
-    @Autowired
-    UserRepo userRepo;
 
-    //chatId -> List<User>
-    final HashMap<Long, List<User>> chats = new HashMap<Long, List<User>>();
+    final HashMap<Long, List<User>> chats = new HashMap <>();
     private String botUsername;
     private String botToken;
 
     public PcmsBot() {
-        Main.bot = this;
     }
 
-    public void init(String name, String token) {
+    public PcmsBot(String name, String token, DefaultBotOptions botOptions) {
+        super(botOptions);
         botUsername = name;
         botToken = token;
-        Iterable<User> users = userRepo.findAll();
+    }
+
+    public void init() {
+        Iterable<User> users = Main.dbService.findUsers();
         for (User u : users) {
             List<User> userList = chats.get(u.getChatId());
             if (userList == null) {
-                userList = new ArrayList<User>();
+                userList = new ArrayList<>();
                 synchronized (chats) {
                     chats.put(u.getChatId(), userList);
                 }
@@ -80,7 +77,8 @@ public class PcmsBot extends TelegramLongPollingBot {
                                 userList.add(user);
                             }
                         }
-                        userRepo.save(user);
+//                        userRepo.save(user);
+                        Main.dbService.saveUser(user);
                         message.setText(user.toString() + " Type /logout <user> <pass> to stop");
                         System.out.println("LOGIN: " + user.toString());
                     } else {
@@ -95,7 +93,8 @@ public class PcmsBot extends TelegramLongPollingBot {
             } else if (message_text.startsWith("/logout")) {
                 String[] parts = message_text.split(" ");
                 if (parts.length == 1) {
-                    userRepo.deleteByChatId(user.getChatId());
+//                    userRepo.deleteByChatId(user.getChatId());
+                    Main.dbService.deleteUserByChatId(user.getChatId());
                     message.setText("Stopped watching");
                     System.out.println("LOGOUT: " + User.getLoginList(chats.get(chatId)));
                     synchronized (chats) {
@@ -113,7 +112,8 @@ public class PcmsBot extends TelegramLongPollingBot {
                         }
                     }
                     if (found) {
-                        userRepo.deleteByChatIdAndLoginAndPass(user.getChatId(), user.getLogin(), user.getPass());
+//                        userRepo.deleteByChatIdAndLoginAndPass(user.getChatId(), user.getLogin(), user.getPass());
+                        Main.dbService.deleteUserByChatIdAndLoginAndPass(user.getChatId(), user.getLogin(), user.getPass());
                         message.setText("Stopped watching user " + user.getLogin());
                         System.out.println("LOGOUT: " + user.getLogin());
                     } else {

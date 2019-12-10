@@ -2,5 +2,12 @@
   "botUsername": "botUserName",
   "botToken": "botToken",
   "url": "http://PCMS.server.URL",
-  "timeout": 60
+  "timeout": 60,
+  "proxy" : {
+    "host": "PROXY_HOST",
+    "port": 8080,
+    "type": "HTTP|SOCKS4|SOCKS5",
+    "user": "user",
+    "password": "password"
+  }
 }
