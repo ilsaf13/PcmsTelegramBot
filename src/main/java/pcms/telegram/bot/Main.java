@@ -83,8 +83,10 @@ public class Main {
 
         RunListWatcher runListWatcher = new RunListWatcher(bot, object.getString("url"), object.getInt("timeout"));
         QuestionsWatcher questionsWatcher = new QuestionsWatcher(bot, object.getString("url"), object.getInt("timeout"));
+        StandingsWatcher standingsWatcher = new StandingsWatcher(bot, object.getString("url"), object.getInt("timeout"));
 
         new Thread(runListWatcher).start();
         new Thread(questionsWatcher).start();
+        new Thread(standingsWatcher).start();
     }
 }

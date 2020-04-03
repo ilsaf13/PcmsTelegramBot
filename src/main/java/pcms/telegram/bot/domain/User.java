@@ -13,7 +13,7 @@ public class User {
     long id;
     long chatId;
     String login, pass, url;
-    boolean watchRuns, watchQuestions;
+    boolean watchRuns, watchQuestions, watchStandings;
 
     @Transient
     public Set<String> failedJobs = new HashSet<String>();
@@ -42,8 +42,18 @@ public class User {
     }
 
     public String toString() {
-        return String.format("User %s, %swatching failed and undefined runs, %swatching questions.",
-                login, watchRuns ? "" : "not ", watchQuestions ? "" : "not ");
+        StringBuilder sb = new StringBuilder();
+        sb.append("User ").append(login).append(".");
+        if (watchRuns) {
+            sb.append(" Watching failed and undefined runs.");
+        }
+        if (watchQuestions) {
+            sb.append(" Watching questions.");
+        }
+        if (watchStandings) {
+            sb.append(" Watching standings.");
+        }
+        return sb.toString();
     }
 
     public long getChatId() {
@@ -92,5 +102,13 @@ public class User {
 
     public void setWatchQuestions(boolean watchQuestions) {
         this.watchQuestions = watchQuestions;
+    }
+
+    public boolean isWatchStandings() {
+        return watchStandings;
+    }
+
+    public void setWatchStandings(boolean watchStandings) {
+        this.watchStandings = watchStandings;
     }
 }

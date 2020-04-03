@@ -19,11 +19,7 @@ public class RunListWatcher implements Runnable {
 
     public static boolean canLogin(String login, String pass) {
         try {
-            JsonReader reader = Json.createReader(new InputStreamReader(
-                    new URL(String.format(url, login, pass, "")).openStream(),
-                    "UTF-8"));
-            JsonObject object = reader.readObject();
-            JsonObject ok = object.getJsonObject("ok");
+            JsonObject ok = Utils.getJsonObject(new URL(String.format(url, login, pass, ""))).getJsonObject("ok");
             return ok != null;
         } catch (Exception ignored) {
         }
@@ -38,11 +34,7 @@ public class RunListWatcher implements Runnable {
     }
 
     String getFailedRuns(User user) throws IOException {
-        JsonReader reader = Json.createReader(new InputStreamReader(
-                new URL(String.format(url, user.getLogin(), user.getPass(), "FL")).openStream(),
-                "UTF-8"));
-        JsonObject object = reader.readObject();
-        JsonObject ok = object.getJsonObject("ok");
+        JsonObject ok = Utils.getJsonObject(new URL(String.format(url, user.getLogin(), user.getPass(), "FL"))).getJsonObject("ok");
         if (ok != null) {
             int total = ok.getInt("total");
             Set<String> userJobs = new HashSet<String>();
@@ -73,7 +65,8 @@ public class RunListWatcher implements Runnable {
             }
             return null;
         } else {
-            return String.format("Login: %s. Couldn't get API response for failed jobs :(", user.getLogin());
+            return String.format("Login: %s. Couldn't get API response for failed jobs. " +
+                    "Type /logout to stop watching all users or /logout <user> <pass> for one user", user.getLogin());
         }
     }
 
@@ -119,7 +112,8 @@ public class RunListWatcher implements Runnable {
 
             return null;
         } else {
-            return String.format("Login: %s. Couldn't get API response for undefined jobs", user.getLogin());
+            return String.format("Login: %s. Couldn't get API response for undefined jobs. " +
+                    "Type /logout to stop watching all users or /logout <user> <pass> for one user", user.getLogin());
         }
     }
 

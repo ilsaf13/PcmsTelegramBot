@@ -13,6 +13,7 @@ public class DbService {
     public DbService() {
         Main.dbService = this;
     }
+
     public Iterable<User> findUsers() {
         return userRepo.findAll();
     }

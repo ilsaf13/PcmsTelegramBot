@@ -57,11 +57,12 @@ public class PcmsBot extends TelegramLongPollingBot {
                     user.setPass(parts[2]);
                     user.setWatchRuns(RunListWatcher.canLogin(user.getLogin(), user.getPass()));
                     user.setWatchQuestions(QuestionsWatcher.canLogin(user.getLogin(), user.getPass()));
+                    user.setWatchStandings(StandingsWatcher.canLogin(user.getLogin(), user.getPass()));
 
-                    if (user.isWatchRuns() || user.isWatchQuestions()) {
+                    if (user.isWatchRuns() || user.isWatchQuestions() || user.isWatchStandings()) {
                         List<User> userList = chats.get(chatId);
                         if (userList == null) {
-                            userList = new ArrayList<User>();
+                            userList = new ArrayList<>();
                             synchronized (chats) {
                                 chats.put(chatId, userList);
                             }
@@ -71,6 +72,7 @@ public class PcmsBot extends TelegramLongPollingBot {
                             User orig = userList.get(index);
                             orig.setWatchRuns(user.isWatchRuns());
                             orig.setWatchQuestions(user.isWatchQuestions());
+                            orig.setWatchStandings(user.isWatchStandings());
                             user = orig;
                         } else {
                             synchronized (chats) {

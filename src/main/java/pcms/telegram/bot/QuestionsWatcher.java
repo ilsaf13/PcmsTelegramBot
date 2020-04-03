@@ -3,9 +3,10 @@ package pcms.telegram.bot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import pcms.telegram.bot.domain.User;
 
-import javax.json.*;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
@@ -25,11 +26,7 @@ public class QuestionsWatcher implements Runnable{
 
     public static boolean canLogin(String login, String pass) {
         try {
-            JsonReader reader = Json.createReader(new InputStreamReader(
-                    new URL(String.format(url, login, pass)).openStream(),
-                    "UTF-8"));
-            JsonObject object = reader.readObject();
-            JsonObject ok = object.getJsonObject("ok");
+            JsonObject ok = Utils.getJsonObject(new URL(String.format(url, login, pass))).getJsonObject("ok");
             return ok != null;
         } catch (Exception ignored) {
         }
@@ -37,11 +34,7 @@ public class QuestionsWatcher implements Runnable{
     }
 
     String getQuestions(User user) throws IOException {
-        JsonReader reader = Json.createReader(new InputStreamReader(
-                new URL(String.format(url, user.getLogin(), user.getPass()))
-                        .openStream(), "UTF-8"));
-        JsonObject object = reader.readObject();
-        JsonObject ok = object.getJsonObject("ok");
+        JsonObject ok = Utils.getJsonObject(new URL(String.format(url, user.getLogin(), user.getPass()))).getJsonObject("ok");
         if (ok != null) {
             int total = ok.getInt("total");
             Set<Long> userQuestions = new HashSet<Long>();
@@ -76,7 +69,8 @@ public class QuestionsWatcher implements Runnable{
             }
             return null;
         } else {
-            return String.format("Login: %s. Couldn't get API response for questions", user.getLogin());
+            return String.format("Login: %s. Couldn't get API response for questions.\n" +
+                    "Type /logout to stop watching all users or /logout <user> <pass> for one user", user.getLogin());
         }
     }
 
