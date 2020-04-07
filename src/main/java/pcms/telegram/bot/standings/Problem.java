@@ -12,4 +12,6 @@ public abstract class Problem {
         time = object.getJsonNumber("time").longValue();
         attempts = object.getJsonNumber("attempts").intValue();
     }
+
+    public abstract String getUpdates(Problem old);
 }

@@ -83,7 +83,8 @@ public class QuestionsWatcher implements Runnable{
                             String questions = getQuestions(user);
                             if (questions != null) {
                                 SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(questions);
-                                bot.execute(message);
+//                                bot.execute(message);
+                                bot.offer(message);
                             }
                         } catch (Exception e) {
                             System.out.printf("Error sending message! Chat-id %d login %s\n", user.getChatId(), user.getLogin());

@@ -126,12 +126,14 @@ public class RunListWatcher implements Runnable {
                             String failed = getFailedRuns(user);
                             if (failed != null) {
                                 SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(failed);
-                                bot.execute(message);
+//                                bot.execute(message);
+                                bot.offer(message);
                             }
                             String undef = getUndefinedRuns(user);
                             if (undef != null) {
                                 SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(undef);
-                                bot.execute(message);
+//                                bot.execute(message);
+                                bot.offer(message);
                             }
                         } catch (Exception e) {
                             System.out.printf("Error sending message! Chat-id %d login %s\n", user.getChatId(), user.getLogin());

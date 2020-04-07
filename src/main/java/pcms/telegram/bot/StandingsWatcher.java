@@ -89,9 +89,11 @@ public class StandingsWatcher implements Runnable {
         for (Map.Entry<String, Standings> entry : standingsMap.entrySet()) {
             Standings old = standings.get(entry.getKey());
             if (old == null) continue;
+            if (old.getProblems().size() != entry.getValue().getProblems().size()) continue;
+
             for (Session<Problem> session : entry.getValue().getSessions()) {
                 Session<Problem> oldSession = old.getSession(session.getId());
-                String update = session.getUpdates(oldSession);
+                String update = session.getUpdates(oldSession, entry.getValue().getProblems());
                 if (update != null) {
                     if (!updates.containsKey(entry.getKey())) {
                         updates.put(entry.getKey(), new ArrayList<>());
@@ -122,12 +124,13 @@ public class StandingsWatcher implements Runnable {
                                 msg.append(su.message);
                             }
                             SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(msg.toString());
-                            try {
-                                System.out.println("DEBUG: Sending message " + msg.toString());
-                                bot.execute(message);
-                            } catch (TelegramApiException e) {
-                                e.printStackTrace();
-                            }
+                            bot.offer(message);
+//                            try {
+//                                System.out.println("DEBUG: Sending message " + msg.toString());
+//                                bot.execute(message);
+//                            } catch (TelegramApiException e) {
+//                                e.printStackTrace();
+//                            }
                         }
                     }
                 }

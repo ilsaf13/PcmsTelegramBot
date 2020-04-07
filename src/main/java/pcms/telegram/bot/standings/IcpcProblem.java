@@ -8,4 +8,22 @@ public class IcpcProblem extends Problem {
         super(object);
         penalty = object.getJsonNumber("penalty").longValue();
     }
+
+    @Override
+    public String getUpdates(Problem old) {
+        if (old == null) {
+            if ("YES".equals(accepted)) {
+                return String.format("+%d", attempts);
+            }
+            return null;
+        }
+        if (!(old instanceof IcpcProblem)) return null;
+        if (!accepted.equals(old.accepted)) {
+            if ("YES".equals(accepted))
+                return String.format("+%d", attempts);
+            else
+                return String.format("-%d", attempts);
+        }
+        return null;
+    }
 }

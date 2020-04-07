@@ -10,10 +10,13 @@ import pcms.telegram.bot.domain.User;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-public class PcmsBot extends TelegramLongPollingBot {
+public class PcmsBot extends TelegramLongPollingBot implements Runnable {
 
     final HashMap<Long, List<User>> chats = new HashMap <>();
+    private BlockingQueue<SendMessage> msgQueue = new LinkedBlockingQueue<>();
     private String botUsername;
     private String botToken;
 
@@ -136,9 +139,43 @@ public class PcmsBot extends TelegramLongPollingBot {
                 }
             }
 
+            msgQueue.offer(message);
+//            try {
+//                execute(message);
+//            } catch (TelegramApiException e) {
+//                e.printStackTrace();
+//            }
+        }
+    }
+
+    public boolean offer(SendMessage msg) {
+        return msgQueue.offer(msg);
+    }
+
+    @Override
+    public void run() {
+        int errors = 0;
+        SendMessage msg = null;
+        while (true) {
             try {
-                execute(message);
+                if (errors == 0) {
+                    msg = msgQueue.take();
+                }
+                execute(msg);
+                errors = 0;
             } catch (TelegramApiException e) {
+                errors++;
+                int timeout = Math.min(errors, 5);
+                System.out.printf("ERROR: Sending message failed %d times. Waiting %d minutes to retry\n", errors, timeout);
+                if (errors > 10) {
+                    System.out.printf("\tchat-id %s text '%s'", msg.getChatId(), msg.getText());
+                    e.printStackTrace();
+                }
+                try {
+                    Thread.sleep(timeout * 60L * 1000L);
+                } catch (InterruptedException ignored) {
+                }
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
@@ -151,5 +188,4 @@ public class PcmsBot extends TelegramLongPollingBot {
     public String getBotToken() {
         return botToken;
     }
-
 }

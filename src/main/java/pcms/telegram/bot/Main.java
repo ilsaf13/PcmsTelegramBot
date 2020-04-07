@@ -80,6 +80,7 @@ public class Main {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+        new Thread(bot).start();
 
         RunListWatcher runListWatcher = new RunListWatcher(bot, object.getString("url"), object.getInt("timeout"));
         QuestionsWatcher questionsWatcher = new QuestionsWatcher(bot, object.getString("url"), object.getInt("timeout"));

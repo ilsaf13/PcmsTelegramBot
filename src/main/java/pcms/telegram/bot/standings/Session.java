@@ -21,5 +21,5 @@ public abstract class Session<T extends Problem> {
         return id;
     }
 
-    public abstract String getUpdates(Session<Problem> old);
+    public abstract String getUpdates(Session<Problem> old, List<Standings.ChallengeProblem> challengeProblems);
 }
