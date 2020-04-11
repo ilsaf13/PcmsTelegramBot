@@ -119,9 +119,9 @@ public class StandingsWatcher implements Runnable {
                         for (String contestId : userContests.get(new LoginPass(user))) {
                             if (!updates.containsKey(contestId)) continue;
                             StringBuilder msg = new StringBuilder();
-                            msg.append("Contest: ").append(standings.get(contestId).getContestName()).append("\n");
+                            msg.append("Contest: ").append(standings.get(contestId).getContestName()).append("\n\n");
                             for (StandingsUpdate su : updates.get(contestId)) {
-                                msg.append(su.message);
+                                msg.append(su.message).append("\n");
                             }
                             SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(msg.toString());
                             bot.offer(message);

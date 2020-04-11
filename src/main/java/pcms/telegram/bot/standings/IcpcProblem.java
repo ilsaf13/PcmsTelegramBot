@@ -13,14 +13,14 @@ public class IcpcProblem extends Problem {
     public String getUpdates(Problem old) {
         if (old == null) {
             if ("YES".equals(accepted)) {
-                return String.format("+%d", attempts);
+                return String.format("+%d", attempts - 1);
             }
             return null;
         }
         if (!(old instanceof IcpcProblem)) return null;
         if (!accepted.equals(old.accepted)) {
             if ("YES".equals(accepted))
-                return String.format("+%d", attempts);
+                return String.format("+%d", attempts - 1);
             else
                 return String.format("-%d", attempts);
         }
