@@ -20,7 +20,10 @@ public class IcpcProblem extends Problem {
         if (!(old instanceof IcpcProblem)) return null;
         if (!accepted.equals(old.accepted)) {
             if ("YES".equals(accepted))
-                return String.format("+%d", attempts - 1);
+                if (attempts == 1)
+                    return "+";
+                else
+                    return String.format("+%d", attempts - 1);
             else
                 return String.format("-%d", attempts);
         }
