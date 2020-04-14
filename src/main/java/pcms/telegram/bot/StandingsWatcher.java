@@ -39,7 +39,6 @@ public class StandingsWatcher implements Runnable {
 
     public static boolean canLogin(String login, String pass) {
         try {
-//            System.out.println(String.format(listUrl, login, pass));
             JsonObject ok = Utils.getJsonObject(new URL(String.format(listUrl, login, pass))).getJsonObject("ok");
             return ok != null;
         } catch (Exception ignored) {
@@ -108,33 +107,36 @@ public class StandingsWatcher implements Runnable {
     public void run() {
         while (true) {
             try {
-                System.out.println("DEBUG: Updating standings");
+//                System.out.println("DEBUG: Updating standings");
                 Map<String, Standings> standingsMap = getStandingsMap();
                 getUpdates(standingsMap);
                 standings = standingsMap;
-                for (Map.Entry<Long, List<User>> entry : bot.chats.entrySet()) {
-                    for (User user : entry.getValue()) {
-                        if (!user.isWatchStandings()) continue;
+                if (!updates.isEmpty()) {
+//                    System.out.println("DEBUG: Updates found");
+                    for (Map.Entry<Long, List<User>> entry : bot.chats.entrySet()) {
+                        for (User user : entry.getValue()) {
+                            if (!user.isWatchStandings()) continue;
 
-                        for (String contestId : userContests.get(new LoginPass(user))) {
-                            if (!updates.containsKey(contestId)) continue;
-                            StringBuilder msg = new StringBuilder();
-                            msg.append("Contest: ").append(standings.get(contestId).getContestName()).append("\n\n");
-                            for (StandingsUpdate su : updates.get(contestId)) {
-                                msg.append(su.message).append("\n");
-                            }
-                            SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(msg.toString());
-                            bot.offer(message);
+                            for (String contestId : userContests.get(new LoginPass(user))) {
+                                if (!updates.containsKey(contestId)) continue;
+                                StringBuilder msg = new StringBuilder();
+                                msg.append("Contest: ").append(standings.get(contestId).getContestName()).append("\n\n");
+                                for (StandingsUpdate su : updates.get(contestId)) {
+                                    msg.append(su.message).append("\n");
+                                }
+                                SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(msg.toString());
+                                bot.offer(message);
 //                            try {
 //                                System.out.println("DEBUG: Sending message " + msg.toString());
 //                                bot.execute(message);
 //                            } catch (TelegramApiException e) {
 //                                e.printStackTrace();
 //                            }
+                            }
                         }
                     }
+                    updates.clear();
                 }
-                updates.clear();
             } catch (IOException e) {
                 e.printStackTrace();
             }
