@@ -15,6 +15,7 @@ public class Standings {
     //Maps session.id to session
     Map<String, Session<Problem>> sessionMap;
     List<ChallengeProblem> problems;
+    Clock clock;
 
     public Standings(JsonObject object) {
         scoringModelId = object.getString("scoring-model-id");
@@ -40,12 +41,37 @@ public class Standings {
                 System.out.printf("WARNING: Unknown scoring model '%s'\n", scoringModelId);
             }
         }
+        clock = new Clock(object.getJsonArray("clock").getJsonObject(0));
         problems = new ArrayList<>();
         if (object.getJsonArray("problems") != null) {
             for (JsonValue value : object.getJsonArray("problems")) {
                 problems.add(new ChallengeProblem(value.asJsonObject()));
             }
         }
+
+    }
+
+    public List<StandingsUpdate> getUpdates(Standings old) {
+        ArrayList<StandingsUpdate> updates = new ArrayList<>();
+        if (old == null) return updates;
+//        System.out.printf("DEBUG: Getting updates contest '%s'\n", contestName);
+        if (!old.frozen && frozen) {
+            updates.add(new StandingsUpdate(StandingsUpdate.Type.CLOCK, "Contest standings are frozen!\n"));
+        }
+        String clockUpd = clock.getUpdates(old.clock);
+        if (clockUpd != null) {
+//            System.out.printf("DEBUG: Clock updated contest '%s' message '%s'", contestName, clockUpd);
+            updates.add(new StandingsUpdate(StandingsUpdate.Type.CLOCK, clockUpd));
+        }
+        if (old.getProblems().size() != problems.size()) return updates;
+        for (Session<Problem> session : sessions) {
+            Session<Problem> oldSession = old.getSession(session.getId());
+            String update = session.getUpdates(oldSession, problems);
+            if (update != null) {
+                updates.add(new StandingsUpdate(StandingsUpdate.Type.SESSION, update));
+            }
+        }
+        return updates;
     }
 
     static class ChallengeProblem {
@@ -72,6 +98,10 @@ public class Standings {
 
     public List<ChallengeProblem> getProblems() {
         return problems;
+    }
+
+    public Clock getClock() {
+        return clock;
     }
 }
 

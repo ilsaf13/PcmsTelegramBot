@@ -1,11 +1,9 @@
 package pcms.telegram.bot;
 
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import pcms.telegram.bot.domain.User;
-import pcms.telegram.bot.standings.Problem;
-import pcms.telegram.bot.standings.Session;
 import pcms.telegram.bot.standings.Standings;
+import pcms.telegram.bot.standings.StandingsUpdate;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -15,7 +13,7 @@ import java.net.URL;
 import java.util.*;
 
 public class StandingsWatcher implements Runnable {
-    PcmsBot bot;
+    Bot bot;
     final long timeout;
     static String listUrl;
     static String standingsUrl;
@@ -26,7 +24,7 @@ public class StandingsWatcher implements Runnable {
     //Maps login and password pair -> site-id,contest-id
     private static Map<LoginPass, Set<String>> userContests;
 
-    public StandingsWatcher(PcmsBot bot, String host, long timeoutSeconds) {
+    public StandingsWatcher(Bot bot, String host, long timeoutSeconds) {
         this.bot = bot;
         this.timeout = timeoutSeconds * 1000L;
         listUrl = String.format("%s/api/party/contest/list?login=%%s&password=%%s&format=json", host);
@@ -85,19 +83,15 @@ public class StandingsWatcher implements Runnable {
     }
 
     void getUpdates(Map<String, Standings> standingsMap) {
-        for (Map.Entry<String, Standings> entry : standingsMap.entrySet()) {
-            Standings old = standings.get(entry.getKey());
-            if (old == null) continue;
-            if (old.getProblems().size() != entry.getValue().getProblems().size()) continue;
-
-            for (Session<Problem> session : entry.getValue().getSessions()) {
-                Session<Problem> oldSession = old.getSession(session.getId());
-                String update = session.getUpdates(oldSession, entry.getValue().getProblems());
-                if (update != null) {
-                    if (!updates.containsKey(entry.getKey())) {
-                        updates.put(entry.getKey(), new ArrayList<>());
-                    }
-                    updates.get(entry.getKey()).add(new StandingsUpdate(session, update));
+        System.out.println("DEBUG: getting updates");
+        for (Map.Entry<String, Standings> now : standingsMap.entrySet()) {
+            Standings old = standings.get(now.getKey());
+            List<StandingsUpdate> upd = now.getValue().getUpdates(old);
+            if (upd.size() > 0) {
+                if (!updates.containsKey(now.getKey())) {
+                    updates.put(now.getKey(), upd);
+                } else {
+                    updates.get(now.getKey()).addAll(upd);
                 }
             }
         }
@@ -118,20 +112,20 @@ public class StandingsWatcher implements Runnable {
                             if (!user.isWatchStandings()) continue;
 
                             for (String contestId : userContests.get(new LoginPass(user))) {
-                                if (!updates.containsKey(contestId)) continue;
+                                List<StandingsUpdate> contestUpdates = updates.get(contestId);
+                                if (contestUpdates == null) continue;
+                                if (bot instanceof PcmsStandingsBot) {
+                                    contestUpdates = getFilteredUpdates(contestUpdates, ((PcmsStandingsBot) bot).filters.get(user.getChatId()));
+                                }
+                                if (contestUpdates.size() == 0) continue;
+
                                 StringBuilder msg = new StringBuilder();
                                 msg.append("Contest: ").append(standings.get(contestId).getContestName()).append("\n\n");
-                                for (StandingsUpdate su : updates.get(contestId)) {
-                                    msg.append(su.message).append("\n");
+                                for (StandingsUpdate su : contestUpdates) {
+                                    msg.append(su.getMessage()).append("\n");
                                 }
                                 SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(msg.toString());
                                 bot.offer(message);
-//                            try {
-//                                System.out.println("DEBUG: Sending message " + msg.toString());
-//                                bot.execute(message);
-//                            } catch (TelegramApiException e) {
-//                                e.printStackTrace();
-//                            }
                             }
                         }
                     }
@@ -148,14 +142,19 @@ public class StandingsWatcher implements Runnable {
         }
     }
 
-    static class StandingsUpdate {
-        Session<Problem> session;
-        String message;
+    List<StandingsUpdate> getFilteredUpdates(List<StandingsUpdate> updates, Set<String> filters) {
+        if (filters == null || filters.size() == 0)
+            return updates;
 
-        public StandingsUpdate(Session<Problem> session, String message) {
-            this.session = session;
-            this.message = message;
+        List<StandingsUpdate> res = new ArrayList<>();
+        for (String filter : filters) {
+            for (StandingsUpdate su : updates) {
+                if (su.getMessage().contains(filter)) {
+                    res.add(su);
+                }
+            }
         }
+        return res;
     }
 
     static class LoginPass implements Comparable<LoginPass> {

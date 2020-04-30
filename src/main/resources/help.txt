@@ -1,0 +1,20 @@
+Available commands:
+
+/login <user> <pass> [runs] [questions] [standings]
+Login to your PCMS account with API rights. By default (/login <user> <pass>) bot will try to send notifications for undefined and failed runs ('view-runs' rights required), questions ('questions' rights) and standings ('monitor' rights). You can also list types of notifications you would like to get by adding 'runs', 'questions' or 'standings'.
+Examples:
+/login user01 123 - get all available notifications for user01
+/login user01 123 questions runs - get notifications on questions and runs for user01
+/login user01 123 standings - get notifications on standings only for user01
+
+/logout [<user> <pass>]
+Stop getting notifications for all users (/logout) or specific user (/logout <user> <pass>).
+Examples:
+/logout - stop getting all notifications
+/logout user01 123 - stop getting notifications for user01
+
+/list
+Shows list of your users
+
+/help
+Shows this help information.

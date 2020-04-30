@@ -1,48 +1,27 @@
 package pcms.telegram.bot;
 
 import org.telegram.telegrambots.bots.DefaultBotOptions;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import pcms.telegram.bot.domain.User;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class PcmsBot extends TelegramLongPollingBot implements Runnable {
+public class PcmsBot extends Bot {
 
-    final HashMap<Long, List<User>> chats = new HashMap<>();
-    private BlockingQueue<SendMessage> msgQueue = new LinkedBlockingQueue<>();
-    private String botUsername;
-    private String botToken;
+    static {
+        type = 1;
+    }
+
     private static Set<String> defaultNotifications = Stream.of("runs", "questions", "standings")
             .collect(Collectors.toCollection(HashSet::new));
 
-    public PcmsBot() {
-    }
-
-    public PcmsBot(String name, String token, DefaultBotOptions botOptions) {
-        super(botOptions);
-        botUsername = name;
-        botToken = token;
-    }
-
-    public void init() {
-        Iterable<User> users = Main.dbService.findUsers();
-        for (User u : users) {
-            List<User> userList = chats.get(u.getChatId());
-            if (userList == null) {
-                userList = new ArrayList<>();
-                synchronized (chats) {
-                    chats.put(u.getChatId(), userList);
-                }
-            }
-            userList.add(u);
-        }
+    public PcmsBot(String name, String token, long id, DefaultBotOptions botOptions) {
+        super(name, token, id, botOptions);
     }
 
     String login(long chatId, String message) {
@@ -61,6 +40,7 @@ public class PcmsBot extends TelegramLongPollingBot implements Runnable {
             }
         }
         User user = new User();
+        user.setBotId(id);
         user.setChatId(chatId);
         user.setLogin(parts[1]);
         user.setPass(parts[2]);
@@ -100,7 +80,7 @@ public class PcmsBot extends TelegramLongPollingBot implements Runnable {
     String logout(long chatId, String message_text) {
         String[] parts = message_text.split(" ");
         if (parts.length == 1) {
-            Main.dbService.deleteUserByChatId(chatId);
+            Main.dbService.deleteUser(id, chatId);
             synchronized (chats) {
                 chats.remove(chatId);
             }
@@ -122,7 +102,7 @@ public class PcmsBot extends TelegramLongPollingBot implements Runnable {
                 }
             }
             if (found) {
-                Main.dbService.deleteUserByChatIdAndLoginAndPass(user.getChatId(), user.getLogin(), user.getPass());
+                Main.dbService.deleteUser(id, user.getChatId(), user.getLogin(), user.getPass());
                 System.out.println("LOGOUT: " + user.getLogin());
                 return "Stopped watching user " + user.getLogin();
             }
@@ -130,6 +110,20 @@ public class PcmsBot extends TelegramLongPollingBot implements Runnable {
         }
 
         return "Type /logout to stop watching all users or /logout <user> <pass> for one user";
+    }
+
+    String help() {
+        StringBuilder hlp = new StringBuilder("");
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("help.txt"));
+            String s;
+            while ((s = br.readLine()) != null) {
+                hlp.append(s).append("\n");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return hlp.toString();
     }
 
     public void onUpdateReceived(Update update) {
@@ -148,64 +142,27 @@ public class PcmsBot extends TelegramLongPollingBot implements Runnable {
             message.setText(login(chatId, message_text));
         } else if (message_text.startsWith("/logout")) {
             message.setText(logout(chatId, message_text));
+        } else if (message_text.equals("/help")) {
+            message.setText(help());
+        } else if (message_text.equals("/list")) {
+            message.setText(list(chatId));
         } else {
             //todo: other commands
-            if (chats.containsKey(chatId)) {
-                StringBuilder sb = new StringBuilder("Watching your users: ");
-                sb.append(User.getLoginList(chats.get(chatId))).append("\n");
-                message.setText(sb.toString());
-            } else {
-                message.setText("Provide your login and password by typing /login <user> <pass>");
-            }
+            if (chatId < 0) return;
+            message.setText("Hello! Type some command or get /help if you don't know how");
         }
 
-        msgQueue.offer(message);
-//            try {
-//                execute(message);
-//            } catch (TelegramApiException e) {
-//                e.printStackTrace();
-//            }
+        offer(message);
     }
 
-    public boolean offer(SendMessage msg) {
-        return msgQueue.offer(msg);
-    }
-
-    @Override
-    public void run() {
-        int errors = 0;
-        SendMessage msg = null;
-        while (true) {
-            try {
-                if (errors == 0) {
-                    msg = msgQueue.take();
-                }
-                System.out.printf("DEBUG: Executing message '%s'\n", msg.getText());
-                execute(msg);
-                errors = 0;
-            } catch (TelegramApiException e) {
-                errors++;
-                int timeout = Math.min(errors, 5);
-                System.out.printf("ERROR: Sending message failed %d times. Waiting %d minutes to retry\n", errors, timeout);
-                if (errors > 10) {
-                    System.out.printf("\tchat-id %s text '%s'", msg.getChatId(), msg.getText());
-                    e.printStackTrace();
-                }
-                try {
-                    Thread.sleep(timeout * 60L * 1000L);
-                } catch (InterruptedException ignored) {
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+    String list(long chatId) {
+        if (chats.containsKey(chatId)) {
+            StringBuilder sb = new StringBuilder("Watching your users: ");
+            sb.append(User.getLoginList(chats.get(chatId))).append("\n");
+            return sb.toString();
+        } else {
+            return "You don't have any users. Provide your login and password by typing /login <user> <pass>";
         }
     }
 
-    public String getBotUsername() {
-        return botUsername;
-    }
-
-    public String getBotToken() {
-        return botToken;
-    }
 }

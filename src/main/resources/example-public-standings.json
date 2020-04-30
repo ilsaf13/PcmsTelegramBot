@@ -1,0 +1,13 @@
+{
+  "standings": [
+    {
+      "login": "user01",
+      "password": "pass01",
+      "name": "IOI 2020"
+    },
+    {
+      "login": "user02",
+      "password": "pass02"
+    }
+  ]
+}

@@ -11,16 +11,17 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     long id;
+    long botId;
     long chatId;
     String login, pass, url;
     boolean watchRuns, watchQuestions, watchStandings;
 
     @Transient
-    public Set<String> failedJobs = new HashSet<String>();
+    public Set<String> failedJobs = new HashSet<>();
     @Transient
-    public Set<String> undefinedJobs = new HashSet<String>();
+    public Set<String> undefinedJobs = new HashSet<>();
     @Transient
-    public Set<Long> questions = new HashSet<Long>();
+    public Set<Long> questions = new HashSet<>();
 
     public boolean equals(Object o) {
         if (!(o instanceof User)) return false;
@@ -110,5 +111,13 @@ public class User {
 
     public void setWatchStandings(boolean watchStandings) {
         this.watchStandings = watchStandings;
+    }
+
+    public long getBotId() {
+        return botId;
+    }
+
+    public void setBotId(long botId) {
+        this.botId = botId;
     }
 }

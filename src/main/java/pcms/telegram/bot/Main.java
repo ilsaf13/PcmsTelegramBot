@@ -8,38 +8,37 @@ import org.telegram.telegrambots.meta.ApiContext;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
-import java.io.FileInputStream;
+import javax.json.JsonValue;
+import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import java.util.ArrayList;
 
 @SpringBootApplication
 public class Main {
 
-    static PcmsBot bot;
     static DbService dbService;
+    static ArrayList<Bot> bots;
 
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
 
         String path = PcmsBot.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         path = path.substring(path.indexOf("file:/") + 6, path.indexOf(".jar!"));
-        path = path.substring(0, path.lastIndexOf("/") + 1) + "bot.json";
+        path = path.substring(0, path.lastIndexOf("/") + 1);
+        File dir = new File(path);
 
-        JsonReader reader = Json.createReader(new InputStreamReader(new FileInputStream(path), "UTF-8"));
-        final JsonObject object = reader.readObject();
+        final JsonObject botsJson = Utils.readJsonObject(new File(dir, "bot.json"));
 
         //Initialize Api Context
         ApiContextInitializer.init();
         DefaultBotOptions botOptions = ApiContext.getInstance(DefaultBotOptions.class);
 
         // Create the Authenticator that will return auth's parameters for proxy authentication
-        if (object.containsKey("proxy")) {
-            final JsonObject proxy = object.getJsonObject("proxy");
+        if (botsJson.containsKey("proxy")) {
+            final JsonObject proxy = botsJson.getJsonObject("proxy");
             if (proxy.containsKey("user")) {
                 Authenticator.setDefault(new Authenticator() {
                     @Override
@@ -72,22 +71,52 @@ public class Main {
         //Instantiate Telegram Bots API
         TelegramBotsApi botsApi = new TelegramBotsApi();
 
-        //Register our bot
-        bot = new PcmsBot(object.getString("botUsername"), object.getString("botToken"), botOptions);
-        bot.init();
-        try {
-            botsApi.registerBot(bot);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
+        //Register our bots
+        bots = new ArrayList<>();
+        for (JsonValue value : botsJson.getJsonArray("bots")) {
+            JsonObject botJson = value.asJsonObject();
+            switch (botJson.getInt("type")) {
+                case 1: {
+                    PcmsBot bot = new PcmsBot(botJson.getString("botUsername"), botJson.getString("botToken"),
+                            botJson.getJsonNumber("id").longValue(), botOptions);
+                    try {
+                        botsApi.registerBot(bot);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
+                    new Thread(bot).start();
+
+                    RunListWatcher runListWatcher = new RunListWatcher(bot, botsJson.getString("url"), botJson.getInt("timeout"));
+                    QuestionsWatcher questionsWatcher = new QuestionsWatcher(bot, botsJson.getString("url"), botJson.getInt("timeout"));
+                    StandingsWatcher standingsWatcher = new StandingsWatcher(bot, botsJson.getString("url"), botJson.getInt("timeout"));
+
+                    new Thread(runListWatcher).start();
+                    new Thread(questionsWatcher).start();
+                    new Thread(standingsWatcher).start();
+
+                    bots.add(bot);
+                    break;
+                }
+                case 2: {
+                    File standingsJson = new File(dir, botJson.getString("public-standings"));
+                    PcmsStandingsBot bot = new PcmsStandingsBot(botJson.getString("botUsername"), botJson.getString("botToken"),
+                            botJson.getJsonNumber("id").longValue(), botOptions, standingsJson);
+                    try {
+                        botsApi.registerBot(bot);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
+                    new Thread(bot).start();
+
+                    StandingsWatcher standingsWatcher = new StandingsWatcher(bot, botsJson.getString("url"), botJson.getInt("timeout"));
+
+                    new Thread(standingsWatcher).start();
+
+                    bots.add(bot);
+                    break;
+                }
+            }
+
         }
-        new Thread(bot).start();
-
-        RunListWatcher runListWatcher = new RunListWatcher(bot, object.getString("url"), object.getInt("timeout"));
-        QuestionsWatcher questionsWatcher = new QuestionsWatcher(bot, object.getString("url"), object.getInt("timeout"));
-        StandingsWatcher standingsWatcher = new StandingsWatcher(bot, object.getString("url"), object.getInt("timeout"));
-
-        new Thread(runListWatcher).start();
-        new Thread(questionsWatcher).start();
-        new Thread(standingsWatcher).start();
     }
 }

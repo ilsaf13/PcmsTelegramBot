@@ -1,13 +1,29 @@
 {
-  "botUsername": "botUserName",
-  "botToken": "botToken",
   "url": "http://PCMS.server.URL",
-  "timeout": 60,
   "proxy" : {
     "host": "PROXY_HOST",
     "port": 8080,
     "type": "HTTP|SOCKS4|SOCKS5",
     "user": "user",
     "password": "password"
-  }
+  },
+  "bots": [
+    {
+      "type": 1,
+      "comment": "This type is PCMS admin bot",
+      "id": 10,
+      "botUsername": "bot1UserName",
+      "botToken": "bot1Token",
+      "timeout": 60
+    },
+    {
+      "type": 2,
+      "comment": "This type is PCMS standings bot",
+      "id": 20,
+      "botUsername": "bot2UserName",
+      "botToken": "bot2Token",
+      "timeout": 120,
+      "public-standings": "public-standings.json"
+    }
+  ]
 }
