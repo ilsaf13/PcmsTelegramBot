@@ -2,7 +2,9 @@ package pcms.telegram.bot.standings;
 
 import javax.json.JsonObject;
 import javax.json.JsonValue;
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.ResourceBundle;
 
 public class IcpcSession extends Session<Problem>{
     int solved;
@@ -20,10 +22,12 @@ public class IcpcSession extends Session<Problem>{
     }
 
     @Override
-    public String getUpdates(Session<Problem> old, List<Standings.ChallengeProblem> challengeProblems) {
+    public String getUpdates(Session<Problem> old, List<Standings.ChallengeProblem> challengeProblems, ResourceBundle standingsMessages) {
+        //{0} solved {1} -> {2}
+        String sessionSolved = standingsMessages.getString("sessionSolved");
         if (old == null) {
             if (solved > 0) {
-                StringBuilder res = new StringBuilder(String.format("%s solved 0 -> %d\n", partyName, solved));
+                StringBuilder res = new StringBuilder(MessageFormat.format(sessionSolved, partyName, 0, solved)).append("\n");
                 for (int i = 0; i < problems.size(); i++) {
                     String upd = problems.get(i).getUpdates(null);
                     if (upd != null) {
@@ -38,7 +42,7 @@ public class IcpcSession extends Session<Problem>{
         if (!(old instanceof IcpcSession)) return null;
         IcpcSession oldIcpc = (IcpcSession) old;
         if (solved != oldIcpc.solved) {
-            StringBuilder res = new StringBuilder(String.format("%s solved %d -> %d\n", partyName, oldIcpc.solved, solved));
+            StringBuilder res = new StringBuilder(MessageFormat.format(sessionSolved, partyName, oldIcpc.solved, solved)).append("\n");
             for (int i = 0; i < problems.size(); i++) {
                 String upd = problems.get(i).getUpdates(oldIcpc.problems.get(i));
                 if (upd != null) {

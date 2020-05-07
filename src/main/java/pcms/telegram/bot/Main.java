@@ -16,6 +16,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 @SpringBootApplication
 public class Main {
@@ -25,6 +27,7 @@ public class Main {
 
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
 
+        Locale.setDefault(new Locale("en", "US"));
         String path = PcmsBot.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         path = path.substring(path.indexOf("file:/") + 6, path.indexOf(".jar!"));
         path = path.substring(0, path.lastIndexOf("/") + 1);
@@ -88,7 +91,8 @@ public class Main {
 
                     RunListWatcher runListWatcher = new RunListWatcher(bot, botsJson.getString("url"), botJson.getInt("timeout"));
                     QuestionsWatcher questionsWatcher = new QuestionsWatcher(bot, botsJson.getString("url"), botJson.getInt("timeout"));
-                    StandingsWatcher standingsWatcher = new StandingsWatcher(bot, botsJson.getString("url"), botJson.getInt("timeout"));
+                    ResourceBundle standingsMessages = ResourceBundle.getBundle("StandingsMessages", new Locale(botJson.getString("language", "en")));
+                    StandingsWatcher standingsWatcher = new StandingsWatcher(bot, botsJson.getString("url"), botJson.getInt("timeout"), standingsMessages);
 
                     new Thread(runListWatcher).start();
                     new Thread(questionsWatcher).start();
@@ -98,9 +102,10 @@ public class Main {
                     break;
                 }
                 case 2: {
+                    ResourceBundle standingsMessages = ResourceBundle.getBundle("StandingsMessages", new Locale(botJson.getString("language", "en")));
                     File standingsJson = new File(dir, botJson.getString("public-standings"));
                     PcmsStandingsBot bot = new PcmsStandingsBot(botJson.getString("botUsername"), botJson.getString("botToken"),
-                            botJson.getJsonNumber("id").longValue(), botOptions, standingsJson);
+                            botJson.getJsonNumber("id").longValue(), botOptions, standingsJson, standingsMessages);
                     try {
                         botsApi.registerBot(bot);
                     } catch (TelegramApiException e) {
@@ -108,7 +113,7 @@ public class Main {
                     }
                     new Thread(bot).start();
 
-                    StandingsWatcher standingsWatcher = new StandingsWatcher(bot, botsJson.getString("url"), botJson.getInt("timeout"));
+                    StandingsWatcher standingsWatcher = new StandingsWatcher(bot, botsJson.getString("url"), botJson.getInt("timeout"), standingsMessages);
 
                     new Thread(standingsWatcher).start();
 

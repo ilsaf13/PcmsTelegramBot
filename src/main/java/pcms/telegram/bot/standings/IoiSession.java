@@ -2,7 +2,9 @@ package pcms.telegram.bot.standings;
 
 import javax.json.JsonObject;
 import javax.json.JsonValue;
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.ResourceBundle;
 
 public class IoiSession extends Session<Problem> {
     int score;
@@ -16,10 +18,12 @@ public class IoiSession extends Session<Problem> {
     }
 
     @Override
-    public String getUpdates(Session<Problem> old, List<Standings.ChallengeProblem> challengeProblems) {
+    public String getUpdates(Session<Problem> old, List<Standings.ChallengeProblem> challengeProblems, ResourceBundle standingsMessages) {
+        //{0} score {1} -> {2}
+        String sessionScore = standingsMessages.getString("sessionScore");
         if (old == null) {
             if (score > 0) {
-                StringBuilder res = new StringBuilder(String.format("%s score 0 -> %d\n", partyName, score));
+                StringBuilder res = new StringBuilder(MessageFormat.format(sessionScore, partyName, 0, score)).append("\n");
                 for (int i = 0; i < problems.size(); i++) {
                     String upd = problems.get(i).getUpdates(null);
                     if (upd != null) {
@@ -34,8 +38,8 @@ public class IoiSession extends Session<Problem> {
         if (!(old instanceof IoiSession)) return null;
         IoiSession oldIoi = (IoiSession) old;
         if (score != oldIoi.score) {
-            StringBuilder res = new StringBuilder();
-            res.append(String.format("%s score %d -> %d\n", partyName, oldIoi.score, score));
+            StringBuilder res = new StringBuilder(MessageFormat.format(sessionScore, partyName, oldIoi.score, score)).append("\n");
+//            res.append(String.format("%s score %d -> %d\n", partyName, oldIoi.score, score));
             for (int i = 0; i < problems.size(); i++) {
                 String upd = problems.get(i).getUpdates(old.problems.get(i));
                 if (upd != null) {

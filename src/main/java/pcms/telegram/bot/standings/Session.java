@@ -3,6 +3,7 @@ package pcms.telegram.bot.standings;
 import javax.json.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
 
 public abstract class Session<T extends Problem> {
     String id;
@@ -21,5 +22,5 @@ public abstract class Session<T extends Problem> {
         return id;
     }
 
-    public abstract String getUpdates(Session<Problem> old, List<Standings.ChallengeProblem> challengeProblems);
+    public abstract String getUpdates(Session<Problem> old, List<Standings.ChallengeProblem> challengeProblems, ResourceBundle standingsMessages);
 }

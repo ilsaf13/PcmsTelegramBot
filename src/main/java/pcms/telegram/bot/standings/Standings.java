@@ -2,10 +2,7 @@ package pcms.telegram.bot.standings;
 
 import javax.json.JsonObject;
 import javax.json.JsonValue;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Standings {
     String scoringModelId;
@@ -51,14 +48,14 @@ public class Standings {
 
     }
 
-    public List<StandingsUpdate> getUpdates(Standings old) {
+    public List<StandingsUpdate> getUpdates(Standings old, ResourceBundle standingsMessages) {
         ArrayList<StandingsUpdate> updates = new ArrayList<>();
         if (old == null) return updates;
 //        System.out.printf("DEBUG: Getting updates contest '%s'\n", contestName);
         if (!old.frozen && frozen) {
-            updates.add(new StandingsUpdate(StandingsUpdate.Type.CLOCK, "Contest standings are frozen!\n"));
+            updates.add(new StandingsUpdate(StandingsUpdate.Type.CLOCK, standingsMessages.getString("standingsFrozen") + "\n"));
         }
-        String clockUpd = clock.getUpdates(old.clock);
+        String clockUpd = clock.getUpdates(old.clock, standingsMessages);
         if (clockUpd != null) {
 //            System.out.printf("DEBUG: Clock updated contest '%s' message '%s'", contestName, clockUpd);
             updates.add(new StandingsUpdate(StandingsUpdate.Type.CLOCK, clockUpd));
@@ -66,7 +63,7 @@ public class Standings {
         if (old.getProblems().size() != problems.size()) return updates;
         for (Session<Problem> session : sessions) {
             Session<Problem> oldSession = old.getSession(session.getId());
-            String update = session.getUpdates(oldSession, problems);
+            String update = session.getUpdates(oldSession, problems, standingsMessages);
             if (update != null) {
                 updates.add(new StandingsUpdate(StandingsUpdate.Type.SESSION, update));
             }

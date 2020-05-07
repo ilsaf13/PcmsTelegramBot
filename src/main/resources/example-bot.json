@@ -23,7 +23,8 @@
       "botUsername": "bot2UserName",
       "botToken": "bot2Token",
       "timeout": 120,
-      "public-standings": "public-standings.json"
+      "public-standings": "public-standings.json",
+      "language": "ru"
     }
   ]
 }

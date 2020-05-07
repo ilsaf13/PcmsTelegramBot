@@ -10,6 +10,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.*;
 
 public class PcmsStandingsBot extends Bot {
@@ -17,13 +18,15 @@ public class PcmsStandingsBot extends Bot {
     private JsonObject standingsJson;
     //maps chatId -> set of StandingsFilter.text
     final Map<Long, Set<String>> filters;
+    final ResourceBundle standingsMessages;
 
     static {
         type = 2;
     }
 
-    public PcmsStandingsBot(String name, String token, long id, DefaultBotOptions botOptions, File jsonFile) {
+    public PcmsStandingsBot(String name, String token, long id, DefaultBotOptions botOptions, File jsonFile, ResourceBundle standingsMessages) {
         super(name, token, id, botOptions);
+        this.standingsMessages = standingsMessages;
         filters = new HashMap<>();
         Iterable<StandingsFilter> list = Main.dbService.findStandingsFiltersByBotId(id);
         for (StandingsFilter sf : list) {
@@ -79,7 +82,7 @@ public class PcmsStandingsBot extends Bot {
         synchronized (filters) {
             filters.remove(chatId);
         }
-        return "Фильтры удалены";
+        return standingsMessages.getString("filtersRemoved");
     }
     String filter(long chatId, String text) {
         String name = text.substring("/filter".length()).trim();
@@ -92,7 +95,7 @@ public class PcmsStandingsBot extends Bot {
                 }
             }
             if (chatFilters.contains(name)) {
-                return "Вы уже добавляли этот фильтр";
+                return standingsMessages.getString("filterAlreadyExist");
             } else {
                 chatFilters.add(name);
                 StandingsFilter filter = new StandingsFilter();
@@ -100,12 +103,12 @@ public class PcmsStandingsBot extends Bot {
                 filter.setChatId(chatId);
                 filter.setText(name);
                 Main.dbService.saveStandingsFilter(filter);
-                return "Будем следить за '" + name + "'";
+                return MessageFormat.format(standingsMessages.getString("filterAdded"), name);
             }
         }
         StringBuilder sb = new StringBuilder();
         if (chatFilters != null && !chatFilters.isEmpty()) {
-            sb.append("Вы следите за: ");
+            sb.append(standingsMessages.getString("filtersList")).append(" ");
             int i = 0;
             for (String t : chatFilters) {
                 if (i != 0) sb.append(", ");
@@ -114,7 +117,7 @@ public class PcmsStandingsBot extends Bot {
             }
             sb.append("\n\n");
         }
-        sb.append("Чтобы добавить фильтр напишите /filter <строка для поиска>");
+        sb.append(standingsMessages.getString("filterAddHelp"));
         return sb.toString();
     }
 
@@ -146,22 +149,22 @@ public class PcmsStandingsBot extends Bot {
                 Main.dbService.saveUser(user);
                 System.out.println("LOGIN: " + user.toString());
             }
-            return "Вы выбрали " + index;
+            return MessageFormat.format(standingsMessages.getString("selectedContest"), index);
         } catch (Exception e) {
             e.printStackTrace();
-            return "Такого контеста нет";
+            return standingsMessages.getString("noSuchContest");
         }
     }
 
     String contestList() {
         JsonArray standings = standingsJson.getJsonArray("standings");
-        StringBuilder ans = new StringBuilder("Выберите контест из списка, по которому вы хотите получать уведомления:\n\n");
+        StringBuilder ans = new StringBuilder(standingsMessages.getString("selectContest")).append("\n\n");
         int i = 1;
         for (JsonValue value : standings) {
             ans.append("/").append(i).append(" ").append(value.asJsonObject().getString("name")).append("\n");
             i++;
         }
-        ans.append("\nДля отключения уведомлений напишите /stop");
+        ans.append("\n").append(standingsMessages.getString("stopNotificationsHelp"));
         return ans.toString();
     }
 
@@ -174,6 +177,6 @@ public class PcmsStandingsBot extends Bot {
         synchronized (filters) {
             filters.remove(chatId);
         }
-        return "Уведомления отключены. Фильтры удалены";
+        return standingsMessages.getString("stoppedNotifications");
     }
 }

@@ -10,6 +10,7 @@ import javax.json.JsonObject;
 import javax.json.JsonValue;
 import java.io.IOException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.*;
 
 public class StandingsWatcher implements Runnable {
@@ -18,15 +19,17 @@ public class StandingsWatcher implements Runnable {
     static String listUrl;
     static String standingsUrl;
     //Maps site-id,contest-id -> standings
-    private static Map<String, Standings> standings;
+    private Map<String, Standings> standings;
     //Maps site-id,contest-id -> list of standings update
-    private static Map<String, List<StandingsUpdate>> updates;
+    private Map<String, List<StandingsUpdate>> updates;
     //Maps login and password pair -> site-id,contest-id
-    private static Map<LoginPass, Set<String>> userContests;
+    private Map<LoginPass, Set<String>> userContests;
+    private ResourceBundle standingsMessages;
 
-    public StandingsWatcher(Bot bot, String host, long timeoutSeconds) {
+    public StandingsWatcher(Bot bot, String host, long timeoutSeconds, ResourceBundle standingsMessages) {
         this.bot = bot;
         this.timeout = timeoutSeconds * 1000L;
+        this.standingsMessages = standingsMessages;
         listUrl = String.format("%s/api/party/contest/list?login=%%s&password=%%s&format=json", host);
         standingsUrl = String.format("%s/api/party/contest/standings?format=json&login=%%s&password=%%s&contest=%%s", host);
         standings = new HashMap<>();
@@ -86,7 +89,7 @@ public class StandingsWatcher implements Runnable {
         System.out.println("DEBUG: getting updates");
         for (Map.Entry<String, Standings> now : standingsMap.entrySet()) {
             Standings old = standings.get(now.getKey());
-            List<StandingsUpdate> upd = now.getValue().getUpdates(old);
+            List<StandingsUpdate> upd = now.getValue().getUpdates(old, standingsMessages);
             if (upd.size() > 0) {
                 if (!updates.containsKey(now.getKey())) {
                     updates.put(now.getKey(), upd);
@@ -120,7 +123,8 @@ public class StandingsWatcher implements Runnable {
                                 if (contestUpdates.size() == 0) continue;
 
                                 StringBuilder msg = new StringBuilder();
-                                msg.append("Contest: ").append(standings.get(contestId).getContestName()).append("\n\n");
+                                String contestName = MessageFormat.format(standingsMessages.getString("contestName"), standings.get(contestId).getContestName());
+                                msg.append(contestName).append("\n\n");
                                 for (StandingsUpdate su : contestUpdates) {
                                     msg.append(su.getMessage()).append("\n");
                                 }
@@ -147,9 +151,9 @@ public class StandingsWatcher implements Runnable {
             return updates;
 
         List<StandingsUpdate> res = new ArrayList<>();
-        for (String filter : filters) {
-            for (StandingsUpdate su : updates) {
-                if (su.getMessage().contains(filter)) {
+        for (StandingsUpdate su : updates) {
+            for (String filter : filters) {
+                if (su.getMessage().toLowerCase().contains(filter.toLowerCase())) {
                     res.add(su);
                 }
             }

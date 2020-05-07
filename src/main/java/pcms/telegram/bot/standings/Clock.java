@@ -1,6 +1,7 @@
 package pcms.telegram.bot.standings;
 
 import javax.json.JsonObject;
+import java.util.ResourceBundle;
 
 public class Clock {
     long startTime;
@@ -17,14 +18,14 @@ public class Clock {
         virtual = object.getBoolean("virtual");
     }
 
-    public String getUpdates(Clock old) {
+    public String getUpdates(Clock old, ResourceBundle standingsMessages) {
         if (old == null) return null;
 //        System.out.printf("DEBUG: old status '%s' new status '%s'\n", old.status, status);
         if (!status.equals(old.status)) {
             if (status.equalsIgnoreCase("running"))
-                return "Contest started!\n";
+                return standingsMessages.getString("contestStarted") + "\n";
             else if (status.equalsIgnoreCase("over"))
-                return "Contest is over!\n";
+                return standingsMessages.getString("contestOver") + "\n";
         }
 
         return null;
