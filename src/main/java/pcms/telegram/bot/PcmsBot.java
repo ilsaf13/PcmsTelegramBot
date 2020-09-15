@@ -24,6 +24,16 @@ public class PcmsBot extends Bot {
         super(name, token, id, botOptions);
     }
 
+    @Override
+    public String stopNotifications(long chatId) {
+        Main.dbService.deleteUser(id, chatId);
+        synchronized (chats) {
+            chats.remove(chatId);
+        }
+        System.out.println("LOGOUT: " + User.getLoginList(chats.get(chatId)));
+        return "Stopped watching all users";
+    }
+
     String login(long chatId, String message) {
         String[] parts = message.split(" ");
         if (parts.length < 3) {
@@ -80,12 +90,7 @@ public class PcmsBot extends Bot {
     String logout(long chatId, String message_text) {
         String[] parts = message_text.split(" ");
         if (parts.length == 1) {
-            Main.dbService.deleteUser(id, chatId);
-            synchronized (chats) {
-                chats.remove(chatId);
-            }
-            System.out.println("LOGOUT: " + User.getLoginList(chats.get(chatId)));
-            return "Stopped watching all users";
+            return stopNotifications(chatId);
         }
 
         if (parts.length == 3) {

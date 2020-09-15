@@ -57,13 +57,14 @@ public class PcmsStandingsBot extends Bot {
             return;
 
         String message_text = update.getMessage().getText();
+        System.out.printf("DEBUG: got message '%s'\n", message_text);
         long chatId = update.getMessage().getChatId();
         SendMessage message = new SendMessage().setChatId(chatId);
 
         if (message_text.matches("/\\d+")) {
             message.setText(selectContest(chatId, message_text));
         } else if (message_text.startsWith("/stop")) {
-            message.setText(stopNotifications(chatId, message_text));
+            message.setText(stopNotifications(chatId));
         } else if (message_text.startsWith("/filter")) {
             message.setText(filter(chatId, message_text));
         } else if (message_text.equals("/removeFilters")) {
@@ -168,7 +169,7 @@ public class PcmsStandingsBot extends Bot {
         return ans.toString();
     }
 
-    String stopNotifications(long chatId, String text) {
+    public String stopNotifications(long chatId) {
         Main.dbService.deleteUser(id, chatId);
         synchronized (chats) {
             chats.remove(chatId);

@@ -86,7 +86,7 @@ public class StandingsWatcher implements Runnable {
     }
 
     void getUpdates(Map<String, Standings> standingsMap) {
-        System.out.println("DEBUG: getting updates");
+//        System.out.println("DEBUG: getting updates");
         for (Map.Entry<String, Standings> now : standingsMap.entrySet()) {
             Standings old = standings.get(now.getKey());
             List<StandingsUpdate> upd = now.getValue().getUpdates(old, standingsMessages);
