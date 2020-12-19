@@ -59,7 +59,7 @@ public abstract class Bot extends TelegramLongPollingBot implements Runnable {
                 if (errors == 0) {
                     msg = msgQueue.take();
                 }
-                System.out.printf("DEBUG: Executing message '%s'\n", msg.getText());
+                System.out.printf("DEBUG: Executing message '%s', chat-id %s\n", msg.getText(), msg.getChatId());
                 execute(msg);
                 errors = 0;
             } catch (TelegramApiException e) {

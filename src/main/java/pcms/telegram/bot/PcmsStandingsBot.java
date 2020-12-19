@@ -57,8 +57,8 @@ public class PcmsStandingsBot extends Bot {
             return;
 
         String message_text = update.getMessage().getText();
-        System.out.printf("DEBUG: got message '%s'\n", message_text);
         long chatId = update.getMessage().getChatId();
+        System.out.printf("DEBUG: got message '%s', chat-id %d\n", message_text, chatId);
         SendMessage message = new SendMessage().setChatId(chatId);
 
         if (message_text.matches("/\\d+")) {
@@ -71,7 +71,7 @@ public class PcmsStandingsBot extends Bot {
             message.setText(removeFilters(chatId));
         } else {
             //group chat
-            if (chatId < 0) return;
+            if (chatId < 0 && !message_text.startsWith("/")) return;
             //personal chat
             message.setText(contestList());
         }

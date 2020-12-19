@@ -51,30 +51,36 @@ public class StandingsWatcher implements Runnable {
     Map<String, Standings> getStandingsMap() throws IOException {
         //Maps site-id,contest-id to Standings
         Map<String, Standings> standingsMap = new HashMap<>();
-        for (Map.Entry<Long, List<User>> entry : bot.chats.entrySet()) {
-            for (User user : entry.getValue()) {
-                if (user.isWatchStandings()) {
-                    LoginPass lp = new LoginPass(user);
-                    JsonObject ok = Utils.getJsonObject(new URL(String.format(listUrl, user.getLogin(), user.getPass()))).getJsonObject("ok");
-                    if (ok == null) {
-                        System.out.printf("WARNING: Couldn't get API response for contests list. Chat-id: %d, login: %s\n", user.getChatId(), user.getLogin());
-                        continue;
-                    }
-                    JsonArray arr = ok.getJsonArray("result");
-                    if (!userContests.containsKey(lp)) userContests.put(lp, new HashSet<>());
-                    Set<String> uc = userContests.get(lp);
-                    for (JsonValue o : arr) {
-                        String s = o.asJsonObject().getString("contest-id");
-                        uc.add(s);
-                        if (!standingsMap.containsKey(s)) {
-                            JsonObject standingsJson = getContestStandings(user, s);
-                            if (standingsJson != null)
-                                standingsMap.put(s, new Standings(standingsJson));
+        long sTime = System.currentTimeMillis();
+        System.out.println("DEBUG: Getting standings map. Chats are locked");
+        synchronized (bot.chats) {
+            //todo: this is a bad idea to lock all chats here, need to be fixed
+            for (Map.Entry<Long, List<User>> entry : bot.chats.entrySet()) {
+                for (User user : entry.getValue()) {
+                    if (user.isWatchStandings()) {
+                        LoginPass lp = new LoginPass(user);
+                        JsonObject ok = Utils.getJsonObject(new URL(String.format(listUrl, user.getLogin(), user.getPass()))).getJsonObject("ok");
+                        if (ok == null) {
+                            System.out.printf("WARNING: Couldn't get API response for contests list. Chat-id: %d, login: %s\n", user.getChatId(), user.getLogin());
+                            continue;
+                        }
+                        JsonArray arr = ok.getJsonArray("result");
+                        if (!userContests.containsKey(lp)) userContests.put(lp, new HashSet<>());
+                        Set<String> uc = userContests.get(lp);
+                        for (JsonValue o : arr) {
+                            String s = o.asJsonObject().getString("contest-id");
+                            uc.add(s);
+                            if (!standingsMap.containsKey(s)) {
+                                JsonObject standingsJson = getContestStandings(user, s);
+                                if (standingsJson != null)
+                                    standingsMap.put(s, new Standings(standingsJson));
+                            }
                         }
                     }
                 }
             }
         }
+        System.out.printf("DEBUG: Got standings map. Chats were locked for %d ms\n", System.currentTimeMillis() - sTime);
         return standingsMap;
     }
 
