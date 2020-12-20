@@ -8,6 +8,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="pcmstelegrambot" />
         <module name="PcmsTelegramBot" />
+        <module name="pcms-telegram-bot" />
       </profile>
     </annotationProcessing>
   </component>

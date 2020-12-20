@@ -14,7 +14,7 @@ public class User {
     long botId;
     long chatId;
     String login, pass, url;
-    boolean watchRuns, watchQuestions, watchStandings;
+    boolean watchRuns, watchQuestions, watchStandings, watchPasswords;
 
     @Transient
     public Set<String> failedJobs = new HashSet<>();
@@ -53,6 +53,9 @@ public class User {
         }
         if (watchStandings) {
             sb.append(" Watching standings.");
+        }
+        if (watchPasswords) {
+            sb.append("Watching passwords");
         }
         return sb.toString();
     }
@@ -111,6 +114,14 @@ public class User {
 
     public void setWatchStandings(boolean watchStandings) {
         this.watchStandings = watchStandings;
+    }
+
+    public boolean isWatchPasswords() {
+        return watchPasswords;
+    }
+
+    public void setWatchPasswords(boolean watchPasswords) {
+        this.watchPasswords = watchPasswords;
     }
 
     public long getBotId() {

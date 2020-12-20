@@ -120,6 +120,19 @@ public class Main {
                     bots.add(bot);
                     break;
                 }
+                case 3: {
+                    PcmsLoginPassBot bot = new PcmsLoginPassBot(botJson.getString("botUsername"), botJson.getString("botToken"),
+                            botJson.getJsonNumber("id").longValue(), botOptions, new File(botJson.getString("namesFile")));
+                    try {
+                        botsApi.registerBot(bot);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
+                    new Thread(bot).start();
+
+                    bots.add(bot);
+                    break;
+                }
             }
 
         }
