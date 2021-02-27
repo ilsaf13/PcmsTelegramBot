@@ -25,6 +25,15 @@
       "timeout": 120,
       "public-standings": "public-standings.json",
       "language": "ru"
+    },
+    {
+      "type": 3,
+      "id": 30,
+      "botUsername": "bot3UserName",
+      "botToken": "bot3Token",
+      "namesFile": "path/to/users.txt",
+      "genxmls": "genxmls -r -y -updateOnly",
+      "dirs": ["dir1", "dir2"]
     }
   ]
 }

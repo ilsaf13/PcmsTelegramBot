@@ -9,22 +9,21 @@ import java.io.*;
 import java.util.*;
 
 public class PcmsLoginPassBot extends Bot {
-    //maps login -> password
-    Map<String, String> logins = new HashMap<>();
-    Map<Long, String> chatUsers = new TreeMap<>();
-    File namesFile;
-    long namesFileModified;
+
+    //maps chatId -> User info
+    final Map<Long, String> chatUsers = new TreeMap<>();
+    //maps chatId -> time in millis of last /change request
+    final Map<Long, Long> lastChange = new HashMap<>();
+    LoginPassUpdater logins;
 
     static {
         type = 3;
     }
 
-    public PcmsLoginPassBot(String name, String token, long id, DefaultBotOptions botOptions, File namesFile) {
+    public PcmsLoginPassBot(String name, String token, long id, DefaultBotOptions botOptions, LoginPassUpdater lpu) {
         super(name, token, id, botOptions);
-        this.namesFile = namesFile;
+        this.logins = lpu;
         try {
-            logins = getLoginsFromFile();
-            namesFileModified = namesFile.lastModified();
             updateLogins();
             BufferedReader br = new BufferedReader(new FileReader("chatUserNames.txt"));
             String s;
@@ -34,55 +33,32 @@ public class PcmsLoginPassBot extends Bot {
             }
             br.close();
         } catch (Exception e) {
-            System.out.printf("ERROR: Couldn't get logins from '%s'\n", namesFile.getAbsolutePath());
+            System.out.printf("ERROR: Couldn't get logins from '%s'\n", "f");
         }
     }
 
-    Map<String, String> getLoginsFromFile() throws Exception {
-        Map<String, String> logins = new HashMap<>();
-        BufferedReader br = new BufferedReader(new FileReader(namesFile));
-        String s;
-        while ((s = br.readLine()) != null) {
-            String[] parts = s.split("\t");
-            logins.put(parts[1], parts[2]);
-        }
-        return logins;
-    }
+
 
     void updateLogins() {
-        for (List<User> userList : chats.values()) {
-            for (User user : userList) {
-                String pass = logins.get(user.getLogin());
-                if (pass == null) {
-                    stopNotifications(user.getChatId());
-                } else if (!pass.equals(user.getPass())) {
-                    user.setPass(pass);
-                    Main.dbService.saveUser(user);
-                    SendMessage message = new SendMessage().setChatId(user.getChatId());
-                    message.setText("У вас новый пароль от PCMS. Нажмите /show чтобы увидеть его");
-                    offer(message);
+        synchronized (chats) {
+            for (List<User> userList : chats.values()) {
+                for (User user : userList) {
+                    String pass = logins.getPassword(user.getLogin());
+                    if (pass == null) {
+                        stopNotifications(user.getChatId());
+                    } else if (!pass.equals(user.getPass())) {
+                        user.setPass(pass);
+                        Main.dbService.saveUser(user);
+                        SendMessage message = new SendMessage().setChatId(user.getChatId());
+                        message.setText("У вас новый пароль от PCMS. Нажмите /show чтобы увидеть его");
+                        offer(message);
+                    }
                 }
             }
         }
     }
 
-    boolean isNamesFileUpdated() {
-        return namesFile.lastModified() > namesFileModified;
-    }
 
-    boolean updateLoginsIfModified() {
-        if (isNamesFileUpdated()) {
-            try {
-                logins = getLoginsFromFile();
-                namesFileModified = namesFile.lastModified();
-                updateLogins();
-                return true;
-            } catch (Exception e) {
-                System.out.printf("ERROR: Couldn't get logins from '%s'\n", namesFile.getAbsolutePath());
-            }
-        }
-        return false;
-    }
 
     @Override
     public String stopNotifications(long chatId) {
@@ -104,12 +80,14 @@ public class PcmsLoginPassBot extends Bot {
         if (!chatUsers.containsKey(chatId)) {
             try {
                 String userName = update.getMessage().getFrom().toString();
-                chatUsers.put(chatId, userName);
-                PrintWriter pw = new PrintWriter("chatUserNames.txt");
-                for (Map.Entry<Long, String> entry : chatUsers.entrySet()) {
-                    pw.println(entry.getKey() + "\t" + entry.getValue());
+                synchronized (chatUsers) {
+                    chatUsers.put(chatId, userName);
+                    PrintWriter pw = new PrintWriter("chatUserNames.txt");
+                    for (Map.Entry<Long, String> entry : chatUsers.entrySet()) {
+                        pw.println(entry.getKey() + "\t" + entry.getValue());
+                    }
+                    pw.close();
                 }
-                pw.close();
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println("ERROR: Error writing chat users to file");
@@ -124,8 +102,11 @@ public class PcmsLoginPassBot extends Bot {
             message.setText(help());
         } else if (message_text.equals("/show")) {
             message.setText(show(chatId));
+        } else if (message_text.startsWith("/change")) {
+            message.setText(change(chatId, message_text));
         } else if (message_text.equals("/update")) {
-            if (updateLoginsIfModified()) {
+            if (logins.updateLoginsIfModified()) {
+                updateLogins();
                 message.setText("Updated");
             } else {
                 message.setText("Not updated");
@@ -149,7 +130,7 @@ public class PcmsLoginPassBot extends Bot {
         user.setChatId(chatId);
         user.setLogin(parts[1]);
         user.setPass(parts[2]);
-        user.setWatchPasswords(user.getPass().equals(logins.get(user.getLogin())));
+        user.setWatchPasswords(user.getPass().equals(logins.getPassword(user.getLogin())));
 
         if (user.isWatchPasswords()) {
             List<User> userList = chats.get(chatId);
@@ -208,7 +189,7 @@ public class PcmsLoginPassBot extends Bot {
                 System.out.println("LOGOUT: " + user.getLogin());
                 return "Больше не слежу за " + user.getLogin();
             }
-            return "Не нашел ваш логи и пароль: " + user.getLogin() + " " + user.getPass();
+            return "Не нашел ваш логин и пароль: " + user.getLogin() + " " + user.getPass();
         }
 
         return "Нажмите /logout чтобы отписаться";
@@ -227,11 +208,56 @@ public class PcmsLoginPassBot extends Bot {
         return sb.toString();
     }
 
+    String change(long chatId, String message_text) {
+        String[] parts = message_text.split(" ");
+        if (parts.length != 3) {
+            return "Чтобы изменить пароль напишите /change логин_от_PCMS новый_пароль";
+        }
+        if (parts[2].length() < 8 || !parts[2].matches("[a-zA-Z1-9]*")) {
+            return "Ваш новый пароль не удовлетворяет одному из условий:\n"+
+                    "- длина пароля должна быть не менее 8 символов\n" +
+                    "- пароль может содержать только большие и маленькие буквы латинского алфавита и цифры";
+        }
+        List<User> userList = chats.get(chatId);
+        if (userList == null) {
+            return "Я не знаю ваших логинов и паролей :(. Попробуйте подписаться на обновления: /login логин_от_PCMS пароль_от_PCMS";
+        }
+        if (System.currentTimeMillis() - lastChange.getOrDefault(chatId, 0L) < 60 * 60 * 1000) {
+            return "Вы можете изменять пароль не чаще чем один раз в час";
+        }
+        User user = null;
+        for (User u : userList) {
+            if (u.getLogin().equals(parts[1])) {
+                user = u;
+                break;
+            }
+        }
+        if (user == null) {
+            return "Такого логина у вас нет. Попробуйте подписаться на обновления: /login логин_от_PCMS пароль_от_PCMS";
+        }
+        if (user.getPass().equals(parts[2])) {
+            return "Ваш новый пароль совпадает со старым";
+        }
+        synchronized (chats) {
+            user.setPass(parts[2]);
+            Main.dbService.saveUser(user);
+        }
+        System.out.printf("CHANGE: chat id %d, new password %s\n", chatId, parts[2]);
+        logins.putPassword(parts[1], parts[2]);
+
+        //todo: save changes to userDb file, run genxmls
+        synchronized (lastChange) {
+            lastChange.put(chatId, System.currentTimeMillis());
+        }
+        return "changing";
+    }
+
     String help() {
         return "Доступные команды:\n" +
                 "- подписаться на обновления: /login логин_от_PCMS пароль_от_PCMS\n" +
                 "- отписаться от обновлений: /logout\n" +
-                "- показать логины и пароли: /show";
+                "- показать логины и пароли: /show\n" +
+                "- поменять пароль: /change логин_от_PCMS новый_пароль_от_PCMS";
 
     }
 }

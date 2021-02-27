@@ -8,6 +8,7 @@ import org.telegram.telegrambots.meta.ApiContext;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import java.io.File;
@@ -16,6 +17,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -121,14 +123,23 @@ public class Main {
                     break;
                 }
                 case 3: {
-                    PcmsLoginPassBot bot = new PcmsLoginPassBot(botJson.getString("botUsername"), botJson.getString("botToken"),
-                            botJson.getJsonNumber("id").longValue(), botOptions, new File(botJson.getString("namesFile")));
+                    List<String> dirs = new ArrayList<>();
+                    JsonArray jdirs = botJson.getJsonArray("dirs");
+                    for (int i = 0; i < jdirs.size(); i++) {
+                        dirs.add(jdirs.getString(i));
+                    }
+                    LoginPassUpdater loginPassUpdater = new LoginPassUpdater(new File(botJson.getString("namesFile")),
+                            botJson.getString("genxmls"), dirs);
+                    PcmsLoginPassBot bot = new PcmsLoginPassBot(botJson.getString("botUsername"),
+                            botJson.getString("botToken"),
+                            botJson.getJsonNumber("id").longValue(), botOptions, loginPassUpdater);
                     try {
                         botsApi.registerBot(bot);
                     } catch (TelegramApiException e) {
                         e.printStackTrace();
                     }
                     new Thread(bot).start();
+                    new Thread(loginPassUpdater).start();
 
                     bots.add(bot);
                     break;
