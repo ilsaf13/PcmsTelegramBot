@@ -132,11 +132,16 @@ public class PcmsLoginPassBot extends Bot {
         user.setLogin(parts[1]);
         user.setPass(parts[2]);
         List<User> loginList = Main.dbService.findUsersByLoginAndPass(user.getLogin(), user.getPass());
-        if (loginList.size() > 0) {
-            System.out.println("WARNING: Someone tries to login with another user credentials! '" + message + "'");
-            if (loginList.size() > 1) {
-                System.out.println("WARNING: More than one user has this login " + user.getLogin());
+        if (loginList.size() > 1) {
+            System.out.println("ERROR: More than one user has this login " + user.getLogin());
+            return "Ошибка в системе, сообщите об этом моему Хозяину";
+        }
+        if (loginList.size() == 1) {
+            if (loginList.get(0).getChatId() == chatId) {
+                return "Этот логин и пароль я уже записал";
             }
+            System.out.println("WARNING: Someone tries to login with another user credentials! '" + message + "' chat-id " + chatId);
+
             SendMessage msg = new SendMessage().setChatId(loginList.get(0).getChatId());
             msg.setText("Другой пользователь пытается использовать Ваш логин и пароль для авторизации у меня. " +
                     "Рекомендую немедленно поменять пароль! /help");
@@ -227,7 +232,7 @@ public class PcmsLoginPassBot extends Bot {
         if (parts.length != 3) {
             return "Чтобы изменить пароль напишите /change логин_от_PCMS новый_пароль";
         }
-        if (parts[2].length() < 8 || !parts[2].matches("[a-zA-Z1-9]*")) {
+        if (parts[2].length() < 8 || !parts[2].matches("[a-zA-Z0-9]*")) {
             return "Ваш новый пароль не удовлетворяет одному из условий:\n"+
                     "- длина пароля должна быть не менее 8 символов\n" +
                     "- пароль может содержать только большие и маленькие буквы латинского алфавита и цифры";
@@ -259,7 +264,6 @@ public class PcmsLoginPassBot extends Bot {
         System.out.printf("CHANGE: chat id %d, new password %s\n", chatId, parts[2]);
         logins.putPassword(parts[1], parts[2]);
 
-        //todo: save changes to userDb file, run genxmls
         synchronized (lastChange) {
             lastChange.put(chatId, System.currentTimeMillis());
         }
