@@ -63,10 +63,10 @@ public class PcmsLoginPassBot extends Bot {
     @Override
     public String stopNotifications(long chatId) {
         Main.dbService.deleteUser(id, chatId);
+        System.out.println("LOGOUT: " + User.getLoginList(chats.get(chatId)));
         synchronized (chats) {
             chats.remove(chatId);
         }
-        System.out.println("LOGOUT: " + User.getLoginList(chats.get(chatId)));
         return "Stopped watching all users";
     }
 
@@ -125,11 +125,25 @@ public class PcmsLoginPassBot extends Bot {
             System.out.println("LOGIN FAILED: " + message);
             return "Извините. Мне нужен ваш логин и пароль вот в таком формате: /login логин_от_PCMS пароль_от_PCMS";
         }
+
         User user = new User();
         user.setBotId(id);
         user.setChatId(chatId);
         user.setLogin(parts[1]);
         user.setPass(parts[2]);
+        List<User> loginList = Main.dbService.findUsersByLoginAndPass(user.getLogin(), user.getPass());
+        if (loginList.size() > 0) {
+            System.out.println("WARNING: Someone tries to login with another user credentials! '" + message + "'");
+            if (loginList.size() > 1) {
+                System.out.println("WARNING: More than one user has this login " + user.getLogin());
+            }
+            SendMessage msg = new SendMessage().setChatId(loginList.get(0).getChatId());
+            msg.setText("Другой пользователь пытается использовать Ваш логин и пароль для авторизации у меня. " +
+                    "Рекомендую немедленно поменять пароль! /help");
+            offer(msg);
+            return "Извините. Ваш логин уже использован другим человеком. Если это точно Ваш логин, " +
+                    "обратитесь к моему Хозяину.";
+        }
         user.setWatchPasswords(user.getPass().equals(logins.getPassword(user.getLogin())));
 
         if (user.isWatchPasswords()) {

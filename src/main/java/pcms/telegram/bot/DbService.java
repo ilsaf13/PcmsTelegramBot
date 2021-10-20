@@ -7,6 +7,8 @@ import pcms.telegram.bot.domain.User;
 import pcms.telegram.bot.repos.StandingsFilterRepo;
 import pcms.telegram.bot.repos.UserRepo;
 
+import java.util.List;
+
 @Service
 public class DbService {
     @Autowired
@@ -24,6 +26,10 @@ public class DbService {
 
     public Iterable<User> findUsersByBotId(long botId){
         return userRepo.findByBotId(botId);
+    }
+
+    public List<User> findUsersByLoginAndPass(String login, String pass) {
+        return userRepo.findUsersByLoginAndPass(login, pass);
     }
 
     public User saveUser(User user) {

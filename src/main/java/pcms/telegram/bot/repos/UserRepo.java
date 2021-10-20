@@ -17,4 +17,6 @@ public interface UserRepo extends JpaRepository<User, Long> {
     void deleteByBotIdAndChatIdAndLoginAndPass(long botId, long chatId, String login, String pass);
 
     List<User> findByBotId(long botId);
+
+    List<User> findUsersByLoginAndPass(String login, String pass);
 }
