@@ -67,8 +67,10 @@ public abstract class Bot extends TelegramLongPollingBot implements Runnable {
                 int timeout = Math.min(errors, 5);
                 System.out.printf("ERROR: Sending message failed %d times. Waiting %d minutes to retry\n", errors, timeout);
                 System.out.println("DEBUG: Exception message '" + e.toString() + "'");
-                if (e.toString().contains("bot was blocked by the user")) {
-                    System.out.printf("INFO: Bot was blocked by the user. Stopping all notifications for chat id '%s'\n", msg.getChatId());
+                String errorMsg = e.toString();
+                if (errorMsg.contains("bot was blocked by the user") ||
+                errorMsg.contains("chat not found")) {
+                    System.out.printf("INFO: Stopping all notifications for chat id '%s'\n", msg.getChatId());
                     stopNotifications(Long.parseLong(msg.getChatId()));
                     errors = 0;
                 }
