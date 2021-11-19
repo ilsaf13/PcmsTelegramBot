@@ -6,8 +6,8 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="pcmstelegrambot" />
         <module name="PcmsTelegramBot" />
+        <module name="pcmstelegrambot" />
         <module name="pcms-telegram-bot" />
       </profile>
     </annotationProcessing>
