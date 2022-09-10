@@ -63,19 +63,21 @@ public abstract class Bot extends TelegramLongPollingBot implements Runnable {
                 execute(msg);
                 errors = 0;
             } catch (TelegramApiException e) {
-                if (!msg.getText().startsWith("(Delayed) "))
-                    msg.setText("(Delayed) " + msg.getText());
-                msgQueue.offer(msg);
                 errors++;
                 int timeout = Math.min(errors, 5);
                 System.out.printf("ERROR: Sending message failed %d times. Waiting %d minutes to retry\n", errors, timeout);
                 System.out.println("DEBUG: Exception message '" + e.toString() + "'");
                 String errorMsg = e.toString();
                 if (errorMsg.contains("bot was blocked by the user") ||
-                        errorMsg.contains("chat not found")) {
+                        errorMsg.contains("chat not found") ||
+                        errorMsg.contains("bot was kicked from the group chat")) {
                     System.out.printf("INFO: Stopping all notifications for chat id '%s'\n", msg.getChatId());
                     stopNotifications(Long.parseLong(msg.getChatId()));
                     errors = 0;
+                } else {
+                    if (!msg.getText().startsWith("(Delayed) "))
+                        msg.setText("(Delayed) " + msg.getText());
+                    msgQueue.offer(msg);
                 }
                 if (errors > 0) {
                     System.out.printf("\tchat-id %s text '%s'", msg.getChatId(), msg.getText());
