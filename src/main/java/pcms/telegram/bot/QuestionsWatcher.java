@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class QuestionsWatcher implements Runnable{
+public class QuestionsWatcher implements Runnable {
     PcmsBot bot;
     final long timeout;
     static String url;
@@ -82,7 +82,9 @@ public class QuestionsWatcher implements Runnable{
                         try {
                             String questions = getQuestions(user);
                             if (questions != null) {
-                                SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(questions);
+                                SendMessage message = new SendMessage();
+                                message.setChatId(entry.getKey());
+                                message.setText(questions);
 //                                bot.execute(message);
                                 bot.offer(message);
                             }

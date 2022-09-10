@@ -74,7 +74,7 @@ public class RunListWatcher implements Runnable {
 //        System.out.println("Jobs size: " + user.undefinedJobs.size());
         JsonReader reader = Json.createReader(new InputStreamReader(
                 new URL(String.format(url, user.getLogin(), user.getPass(), "UD") + "&detail=job-times")
-                .openStream(), "UTF-8"));
+                        .openStream(), "UTF-8"));
         JsonObject object = reader.readObject();
         JsonObject ok = object.getJsonObject("ok");
         if (ok != null) {
@@ -125,13 +125,17 @@ public class RunListWatcher implements Runnable {
                         try {
                             String failed = getFailedRuns(user);
                             if (failed != null) {
-                                SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(failed);
+                                SendMessage message = new SendMessage();
+                                message.setChatId(entry.getKey());
+                                message.setText(failed);
 //                                bot.execute(message);
                                 bot.offer(message);
                             }
                             String undef = getUndefinedRuns(user);
                             if (undef != null) {
-                                SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(undef);
+                                SendMessage message = new SendMessage();
+                                message.setChatId(entry.getKey());
+                                message.setText(undef);
 //                                bot.execute(message);
                                 bot.offer(message);
                             }

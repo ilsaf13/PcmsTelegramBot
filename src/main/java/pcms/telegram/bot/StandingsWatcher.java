@@ -134,7 +134,9 @@ public class StandingsWatcher implements Runnable {
                                 for (StandingsUpdate su : contestUpdates) {
                                     msg.append(su.getMessage()).append("\n");
                                 }
-                                SendMessage message = new SendMessage().setChatId(entry.getKey()).setText(msg.toString());
+                                SendMessage message = new SendMessage();
+                                message.setChatId(entry.getKey());
+                                message.setText(msg.toString());
                                 bot.offer(message);
                             }
                         }

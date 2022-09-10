@@ -138,7 +138,8 @@ public class PcmsBot extends Bot {
         String message_text = update.getMessage().getText();
         long chatId = update.getMessage().getChatId();
 
-        SendMessage message = new SendMessage().setChatId(chatId);
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
 
         User user = new User();
         user.setChatId(chatId);

@@ -49,7 +49,8 @@ public class PcmsLoginPassBot extends Bot {
                     } else if (!pass.equals(user.getPass())) {
                         user.setPass(pass);
                         Main.dbService.saveUser(user);
-                        SendMessage message = new SendMessage().setChatId(user.getChatId());
+                        SendMessage message = new SendMessage();
+                        message.setChatId(user.getChatId());
                         message.setText("У вас новый пароль от PCMS. Нажмите /show чтобы увидеть его");
                         offer(message);
                     }
@@ -93,7 +94,9 @@ public class PcmsLoginPassBot extends Bot {
                 System.out.println("ERROR: Error writing chat users to file");
             }
         }
-        SendMessage message = new SendMessage().setChatId(chatId);
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+
         if (message_text.startsWith("/login")) {
             message.setText(login(chatId, message_text));
         } else if (message_text.startsWith("/logout")) {
@@ -142,7 +145,8 @@ public class PcmsLoginPassBot extends Bot {
             }
             System.out.println("WARNING: Someone tries to login with another user credentials! '" + message + "' chat-id " + chatId);
 
-            SendMessage msg = new SendMessage().setChatId(loginList.get(0).getChatId());
+            SendMessage msg = new SendMessage();
+            msg.setChatId(loginList.get(0).getChatId());
             msg.setText("Другой пользователь пытается использовать Ваш логин и пароль для авторизации у меня. " +
                     "Рекомендую немедленно поменять пароль! /help");
             offer(msg);

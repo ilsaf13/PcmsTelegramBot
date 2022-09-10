@@ -59,7 +59,8 @@ public class PcmsStandingsBot extends Bot {
         String message_text = update.getMessage().getText();
         long chatId = update.getMessage().getChatId();
         System.out.printf("DEBUG: got message '%s', chat-id %d\n", message_text, chatId);
-        SendMessage message = new SendMessage().setChatId(chatId);
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
 
         if (message_text.matches("/\\d+")) {
             message.setText(selectContest(chatId, message_text));

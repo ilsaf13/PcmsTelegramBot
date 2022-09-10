@@ -2,11 +2,12 @@ package pcms.telegram.bot;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.telegram.telegrambots.ApiContextInitializer;
+//import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
-import org.telegram.telegrambots.meta.ApiContext;
+//import org.telegram.telegrambots.meta.ApiContext;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -27,7 +28,7 @@ public class Main {
     static DbService dbService;
     static ArrayList<Bot> bots;
 
-    public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
+    public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException, TelegramApiException {
 
         Locale.setDefault(new Locale("en", "US"));
         String path = PcmsBot.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -38,8 +39,9 @@ public class Main {
         final JsonObject botsJson = Utils.readJsonObject(new File(dir, "bot.json"));
 
         //Initialize Api Context
-        ApiContextInitializer.init();
-        DefaultBotOptions botOptions = ApiContext.getInstance(DefaultBotOptions.class);
+        //ApiContextInitializer.init();
+        //DefaultBotOptions botOptions = ApiContext.getInstance(DefaultBotOptions.class);
+        DefaultBotOptions botOptions = new DefaultBotOptions();
 
         // Create the Authenticator that will return auth's parameters for proxy authentication
         if (botsJson.containsKey("proxy")) {
@@ -74,7 +76,7 @@ public class Main {
         SpringApplication.run(Main.class, args);
 
         //Instantiate Telegram Bots API
-        TelegramBotsApi botsApi = new TelegramBotsApi();
+        TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
 
         //Register our bots
         bots = new ArrayList<>();
