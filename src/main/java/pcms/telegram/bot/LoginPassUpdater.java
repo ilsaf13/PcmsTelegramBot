@@ -73,7 +73,15 @@ public class LoginPassUpdater implements Runnable {
         String s;
         while ((s = br.readLine()) != null) {
             String[] parts = s.split("\t");
-            logins.put(parts[1], parts[2]);
+            if (parts.length == 3) {
+                //old format: name login pass
+                logins.put(parts[1], parts[2]);
+            } else if (parts.length == 4) {
+                //new format: id name login pass
+                logins.put(parts[2], parts[3]);
+            } else {
+                System.out.printf("Wrong format of row '%s' in user DB '%s'\n", s, namesFile.getAbsolutePath());
+            }
         }
         br.close();
         return logins;
@@ -90,8 +98,18 @@ public class LoginPassUpdater implements Runnable {
             String s;
             while ((s = br.readLine()) != null) {
                 String[] parts = s.split("\t");
-                parts[2] = logins.getOrDefault(parts[1], parts[2]);
-                pw.println(parts[0] + "\t" + parts[1] + "\t" + parts[2]);
+                if (parts.length == 3) {
+                    //old format: name login pass
+                    parts[2] = logins.getOrDefault(parts[1], parts[2]);
+                    pw.println("\t" + parts[0] + "\t" + parts[1] + "\t" + parts[2]);
+                } else if (parts.length == 4) {
+                    //new format: id name login pass
+                    parts[3] = logins.getOrDefault(parts[2], parts[3]);
+                    pw.println(parts[0] + "\t" + parts[1] + "\t" + parts[2] + "\t" + parts[3]);
+                } else {
+                    System.out.printf("Wrong format of row '%s' in user DB '%s'\n", s, namesFile.getAbsolutePath());
+                    pw.println(s);
+                }
             }
             br.close();
             pw.close();
