@@ -38,7 +38,6 @@ public class PcmsLoginPassBot extends Bot {
     }
 
 
-
     void updateLogins() {
         synchronized (chats) {
             for (List<User> userList : chats.values()) {
@@ -58,7 +57,6 @@ public class PcmsLoginPassBot extends Bot {
             }
         }
     }
-
 
 
     @Override
@@ -114,7 +112,10 @@ public class PcmsLoginPassBot extends Bot {
             } else {
                 message.setText("Not updated");
             }
-        }else {
+        } else if (message_text.equals("/update please@ilsaf13")) {
+            logins.setUpdated();
+            message.setText("Calling genxmls");
+        } else {
             //todo: other commands
             if (chatId < 0) return;
             message.setText("Привет! Напиши команду или нажми /help, если не знаешь как");
@@ -237,7 +238,7 @@ public class PcmsLoginPassBot extends Bot {
             return "Чтобы изменить пароль напишите /change логин_от_PCMS новый_пароль";
         }
         if (parts[2].length() < 8 || !parts[2].matches("[a-zA-Z0-9]*")) {
-            return "Ваш новый пароль не удовлетворяет одному из условий:\n"+
+            return "Ваш новый пароль не удовлетворяет одному из условий:\n" +
                     "- длина пароля должна быть не менее 8 символов\n" +
                     "- пароль может содержать только большие и маленькие буквы латинского алфавита и цифры";
         }

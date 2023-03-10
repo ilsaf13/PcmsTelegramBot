@@ -15,7 +15,7 @@ import java.util.*;
 
 public class StandingsWatcher implements Runnable {
     Bot bot;
-    final long timeout;
+    long timeout;
     static String listUrl;
     static String standingsUrl;
     //Maps site-id,contest-id -> standings
@@ -27,14 +27,18 @@ public class StandingsWatcher implements Runnable {
     private ResourceBundle standingsMessages;
 
     public StandingsWatcher(Bot bot, String host, long timeoutSeconds, ResourceBundle standingsMessages) {
+        this(host);
         this.bot = bot;
         this.timeout = timeoutSeconds * 1000L;
         this.standingsMessages = standingsMessages;
+        updates = new HashMap<>();
+        userContests = new TreeMap<>();
+    }
+
+    public StandingsWatcher(String host) {
         listUrl = String.format("%s/api/party/contest/list?login=%%s&password=%%s&format=json", host);
         standingsUrl = String.format("%s/api/party/contest/standings?format=json&login=%%s&password=%%s&contest=%%s", host);
         standings = new HashMap<>();
-        updates = new HashMap<>();
-        userContests = new TreeMap<>();
         System.out.println("URL: " + standingsUrl);
     }
 
@@ -71,9 +75,9 @@ public class StandingsWatcher implements Runnable {
                             String s = o.asJsonObject().getString("contest-id");
                             uc.add(s);
                             if (!standingsMap.containsKey(s)) {
-                                JsonObject standingsJson = getContestStandings(user, s);
-                                if (standingsJson != null)
-                                    standingsMap.put(s, new Standings(standingsJson));
+                                Standings standings = getContestStandings(lp, s);
+                                if (standings != null)
+                                    standingsMap.put(s, standings);
                             }
                         }
                     }
@@ -84,11 +88,15 @@ public class StandingsWatcher implements Runnable {
         return standingsMap;
     }
 
-    JsonObject getContestStandings(User user, String contestId) throws IOException {
-        JsonObject ok = Utils.getJsonObject(new URL(String.format(standingsUrl, user.getLogin(), user.getPass(), contestId))).getJsonObject("ok");
-        if (ok == null) return null;
-        if (ok.getJsonArray("standings").size() == 0) return null;
-        return ok.getJsonArray("standings").get(0).asJsonObject();
+    public Standings getContestStandings(LoginPass user, String contestId) {
+        try {
+            JsonObject ok = Utils.getJsonObject(new URL(String.format(standingsUrl, user.getLogin(), user.getPass(), contestId))).getJsonObject("ok");
+            if (ok == null) return null;
+            if (ok.getJsonArray("standings").size() == 0) return null;
+            return new Standings(ok.getJsonArray("standings").get(0).asJsonObject());
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     void getUpdates(Map<String, Standings> standingsMap) {
@@ -169,7 +177,7 @@ public class StandingsWatcher implements Runnable {
         return res;
     }
 
-    static class LoginPass implements Comparable<LoginPass> {
+    public static class LoginPass implements Comparable<LoginPass> {
         String login, pass;
 
         public LoginPass(String login, String pass) {
@@ -186,6 +194,14 @@ public class StandingsWatcher implements Runnable {
         public int compareTo(LoginPass o) {
             if (login.equals(o.login)) return pass.compareTo(o.pass);
             return login.compareTo(o.login);
+        }
+
+        public String getLogin() {
+            return login;
+        }
+
+        public String getPass() {
+            return pass;
         }
     }
 }

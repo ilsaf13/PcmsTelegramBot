@@ -50,4 +50,8 @@ public class IoiSession extends Session<Problem> {
         }
         return null;
     }
+
+    public int getScore() {
+        return score;
+    }
 }

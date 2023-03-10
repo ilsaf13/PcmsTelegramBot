@@ -53,4 +53,8 @@ public class IcpcSession extends Session<Problem>{
         }
         return null;
     }
+
+    public int getSolved() {
+        return solved;
+    }
 }

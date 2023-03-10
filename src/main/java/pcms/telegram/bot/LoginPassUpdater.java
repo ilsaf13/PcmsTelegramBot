@@ -133,6 +133,12 @@ public class LoginPassUpdater implements Runnable {
         }
     }
 
+    void setUpdated() {
+        synchronized (loginsFlag) {
+            updated = true;
+        }
+    }
+
     boolean isNamesFileUpdated() {
         return namesFile.lastModified() > namesFileModified;
     }
