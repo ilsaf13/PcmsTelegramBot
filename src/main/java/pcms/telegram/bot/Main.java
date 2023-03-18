@@ -133,8 +133,8 @@ public class Main {
                     LoginPassUpdater loginPassUpdater = new LoginPassUpdater(new File(botJson.getString("namesFile")),
                             botJson.getString("genxmls"), dirs);
                     PcmsLoginPassBot bot = new PcmsLoginPassBot(botJson.getString("botUsername"),
-                            botJson.getString("botToken"),
-                            botJson.getJsonNumber("id").longValue(), botOptions, loginPassUpdater);
+                            botJson.getString("botToken"), botJson.getJsonNumber("id").longValue(),
+                            botJson.getJsonNumber("botAdmin").longValue(), botOptions, loginPassUpdater);
                     try {
                         botsApi.registerBot(bot);
                     } catch (TelegramApiException e) {

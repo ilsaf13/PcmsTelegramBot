@@ -1,5 +1,5 @@
 {
-  "url": "http://PCMS.server.URL",
+  "url": "http://PCMS.server.URL/client",
   "proxy" : {
     "host": "PROXY_HOST",
     "port": 8080,
@@ -28,11 +28,13 @@
     },
     {
       "type": 3,
+      "comment": "This type is Login/Password bot",
       "id": 30,
       "botUsername": "bot3UserName",
       "botToken": "bot3Token",
+      "botAdmin": 123456789,
       "namesFile": "path/to/users.txt",
-      "genxmls": "genxmls -r -y -updateOnly",
+      "genxmls": "genxmls -r -y -updateOnly -quiet",
       "dirs": ["dir1", "dir2"]
     }
   ]

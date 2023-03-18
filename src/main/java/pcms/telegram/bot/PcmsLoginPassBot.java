@@ -16,12 +16,17 @@ public class PcmsLoginPassBot extends Bot {
     final Map<Long, Long> lastChange = new HashMap<>();
     LoginPassUpdater logins;
 
+    final long botAdmin;
+
     static {
         type = 3;
     }
 
-    public PcmsLoginPassBot(String name, String token, long id, DefaultBotOptions botOptions, LoginPassUpdater lpu) {
+    public PcmsLoginPassBot(String name, String token, long id, long botAdmin,
+                            DefaultBotOptions botOptions, LoginPassUpdater lpu) {
         super(name, token, id, botOptions);
+
+        this.botAdmin = botAdmin;
         this.logins = lpu;
         try {
             updateLogins();
@@ -105,16 +110,18 @@ public class PcmsLoginPassBot extends Bot {
             message.setText(show(chatId));
         } else if (message_text.startsWith("/change")) {
             message.setText(change(chatId, message_text));
-        } else if (message_text.equals("/update")) {
+        } else if (message_text.equals("/update") && chatId == botAdmin) {
             if (logins.updateLoginsIfModified()) {
                 updateLogins();
                 message.setText("Updated");
             } else {
                 message.setText("Not updated");
             }
-        } else if (message_text.equals("/update please@ilsaf13")) {
+        } else if (message_text.equals("/genxmls") && chatId == botAdmin) {
             logins.setUpdated();
             message.setText("Calling genxmls");
+        } else if (message_text.equals("/id")) {
+            message.setText("You chat id is: " + chatId);
         } else {
             //todo: other commands
             if (chatId < 0) return;
